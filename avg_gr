@@ -1,0 +1,107 @@
+#!/usr/bin/env python
+
+import os
+import sys
+import math
+import numpy as np
+
+def is_float(s):
+  try:
+    float(s)
+    return True
+  except ValueError:
+    return False
+
+def get_nblocks(infile):
+  nblocks = 0
+  for line in infile:
+    sp = line.split()
+    if (len(sp)>0):
+      if (sp[0]=="Step"): nblocks = nblocks+1
+  infile.seek(0)
+  return int(nblocks)
+
+def get_ncols(infile):
+  ncols = 0
+  foo = 0
+  while (foo==0):
+    line = infile.readline()
+    sp = line.split()
+    if (len(sp)>0):
+      if (is_float(sp[0])):
+        ncols = len(sp)
+        foo = 1
+  infile.seek(0)
+  return int(ncols)
+
+def get_nlines(infile):
+  nlines = 0
+  for line in infile:
+    nlines = nlines + 1
+  infile.seek(0)
+  return nlines
+
+def readblocks(infile,nblocks,ncols,nlines,N):
+  blocks = [[[0.0 for i in range(ncols)] for j in range(N)] for k in range(nlines+1)]
+  count = 0
+  k = 0
+  tmp = -1
+  tmp2 = 0
+  for line in infile:
+    count = count + 1
+    sp = line.split()
+    if (len(sp)>0):
+      if (sp[0]=="Step"): tmp = tmp+1
+      if (is_float(sp[0])):
+        if (tmp>tmp2): k = 0
+        if (tmp > nblocks-N-1):
+          for i in range(ncols):
+            try:
+              blocks[k][tmp-nblocks+N][i] = float(sp[i])
+            except IndexError:
+              print i, sp, tmp, tmp2
+              exit(1)
+            tmp2 = tmp
+          k = k + 1
+  infile.seek(0)
+  return blocks
+
+
+if (sys.argv[2]=="all"):
+  N = 0
+elif (sys.argv[2]!="all"):
+  N = int(sys.argv[2])
+
+with open(sys.argv[1],"r") as fin:
+  with open(sys.argv[1]+"_avg","w") as fout:
+    count=0
+    line=""
+    while (count<3):
+      line = fin.readline()
+      sp = line.split()
+      count = count+1
+    fin.seek(0)
+    nblocks = get_nblocks(fin)
+    ncols = get_ncols(fin)
+    nlines = get_nlines(fin)
+    print nlines, nblocks
+    nlines = nlines/nblocks - 5
+    print nlines, nblocks, ncols
+    fout.write(line)
+    if (N==0 or N > nblocks): N=nblocks
+    gr = readblocks(fin,nblocks,ncols,nlines,N)
+    gr_avg = [[0.0 for i in range(ncols)] for j in range(nlines+1)]
+    for j in range(nlines+1):
+      for i in range(1,ncols):
+        for k in range(0, N, 1):
+          gr_avg[j][i]= gr_avg[j][i] + gr[j][k][i]/float(N)
+        gr_avg[j][0] = gr[j][0][0]
+
+    for j in range(nlines):
+      for i in range(ncols):
+        fout.write(str(gr_avg[j][i])+"\t")
+      fout.write('\n')
+
+
+
+

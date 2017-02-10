@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+
+import string, sys
+
+# Definitions of functions
+####################################
+def readUntil(f, s):
+  while True:
+    line = f.readline()
+    if len(line) == 0:
+      return ''
+    if string.find(line, s) >= 0:
+      return line.strip()
+####################################
+
+
+if len(sys.argv) < 2 :
+  print 'Usage: ' + sys.argv[0] + ' Crystal output files (reference energy file as first one)'
+  sys.exit(1)
+
+#print "Name    Energy/Si(kJ/mol)"
+print "Energy/Si(kJ/mol)"
+for i in range(1, len(sys.argv)):
+	with open(sys.argv[i],"r") as f :
+		#print sys.argv[i]
+		Energy = readUntil(f, 'SCF ENDED')
+		Energy2 = readUntil(f, 'SCF ENDED')
+                if (len(Energy2.split())>7): Energy=Energy2
+		En = float(Energy.split()[8])*2625.5
+		#print En
+		f.seek(0)
+		line = readUntil(f, 'ATOMS IN THE UNIT CELL')
+		spline = line.split()
+		NumbSi = int(spline[len(spline)-1])/3
+		#print NumbSi
+		if (i==1) : 
+			Eref_Si=En/NumbSi
+		#	print Eref_Si
+		#print En/NumbSi
+		name = ((sys.argv[i].strip()).split("/"))
+		name = name[len(name)-1].split("_")[0]
+		name = name.split(".")[0]
+		#print name," ",(En/NumbSi)-Eref_Si
+                #print NumbSi, En/2625.5
+		if (i!=1): print (En/NumbSi)-Eref_Si
+		#print "\n\n"
+
+

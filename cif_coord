@@ -1,0 +1,22 @@
+#!/usr/bin/env python
+
+import os
+import sys
+from math import *
+
+# Define usage
+if len(sys.argv)<2 or len(sys.argv)>2:
+    print "Usage ", sys.argv[0], " basename of cif file"
+    exit(1)
+
+# Define list of elements
+Elements=["H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg","Al","Si","P","S","Cl","Ar","K","Ca","Sc","Ti","V","Cr","Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr","Rb","Sr","Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd","In","Sn","Sb","Te","I","Xe","Cs","Ba","La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf","Ta","W","Re","Os","Ir","Pt","Au","Hg","Tl","Pb","Bi","Po","At","Rn","Fr","Ra","Ac","Th","Pa","U"]
+
+with open(sys.argv[1]+".cif","r") as cif:
+    with open(sys.argv[1]+".coord","w") as coord:
+        for line in cif:
+            spline=line.split()
+            if (len(spline)>2):
+                if (spline[1]) in Elements:
+                    coord.write(spline[1]+" "+spline[3]+" "+spline[4]+" "+spline[5]+"\n")
+

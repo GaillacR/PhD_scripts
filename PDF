@@ -1,0 +1,152 @@
+#!/usr/bin/env python
+
+import sys
+import math
+import numpy as np
+#import profile
+import ReadWrite as rw
+import PBC_RG as pbc
+
+def main(argv):
+  # Define list of elements and atomic scattering factors at around 59 keV
+  Elements=["H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg","Al","Si","P","S","Cl","Ar","K","Ca","Sc","Ti","V","Cr","Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr","Rb","Sr","Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd","In","Sn","Sb","Te","I","Xe","Cs","Ba","La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf","Ta","W","Re","Os","Ir","Pt","Au","Hg","Tl","Pb","Bi","Po","At","Rn","Fr","Ra","Ac","Th","Pa","U"]
+  Atfact={"H": 1.00000, "C": 6.00054, "N": 7.00100, "O": 8.00166, "Zn": 30.1630}
+
+  if len(argv)<5:
+    print "Usage "+ argv[0]+ "first step to analyze, print option(min/light/medium/heavy/all), xyz file basename, cell parameter filename, is_tenth (optional), last step (optional)"
+    exit(1)
+
+  first_step=int(argv[1])
+  gr_option=argv[2]
+  xyz=argv[3]
+  cell_f=argv[4]
+  is_tenth = 0
+  if (len(argv)>5): is_tenth=int(argv[5])
+
+  split = str.split
+  [Cell, Cell.C] = rw.readCell(cell_f)
+  a = Cell.a
+  b = Cell.b
+  c = Cell.c
+  print Cell.a,Cell.b,Cell.c
+  Vol = a*b*c*(1- np.cos(Cell.alpha)**2- np.cos(Cell.beta)**2- np.cos(Cell.gamma)**2) + 2*math.sqrt(np.cos(Cell.alpha)*np.cos(Cell.beta)*np.cos(Cell.gamma))
+
+  tmp_name = xyz.split('/')
+  tmp_name = tmp_name[len(tmp_name)-1]
+  gr_name ="PDF_"+gr_option+tmp_name+str(first_step)
+
+  dr=0.01
+  #rmax=math.sqrt(a**2+b**2+c**2)/2
+  rmax=min([a/2,b/2,c/2])
+  irmax=int((rmax/dr)-1)
+  #print dr, rmax, irmax
+
+  gr_list=["#### r"]
+  last_step = 1e15
+  if (gr_option=="allend"): last_step = int(argv[-1])
+
+  delta = 10
+  if (gr_option=="min"):
+    delta=1
+  elif (gr_option=="light"):
+    delta=10000
+  elif (gr_option=="medium"):
+    delta=1000
+  elif (gr_option=="heavy"):
+    delta=100
+  elif (gr_option in ["all","allend"]):
+    delta=10
+  elif (gr_option.split("=")[0]=="delta"):
+    delta=int(gr_option.split("=")[1])
+
+  if (is_tenth==0):
+    trajPos = rw.readFromXYZFile(xyz + ".xyz",delta,first_step,last_step)
+  elif (is_tenth==1):
+    trajPos = rw.readFromXYZFile(xyz + ".xyz",delta/10,first_step,last_step)
+
+  style=first_step
+  Atoms_Numb = len(trajPos[0])
+  Numb_Steps = len(trajPos)
+  print Atoms_Numb
+
+  Used_elements = pbc.get_elements(trajPos[0])
+  N = len(Used_elements)
+  gr=np.zeros([1+N*(N+1)/2,irmax+1])
+
+
+  Mass = Atoms_Numb
+  coeff = {}
+  for e in range(N):
+    coeff[Used_elements[e]] = 0
+
+  for b in range(Atoms_Numb):
+    for at in range(Atoms_Numb):
+      coord2 = pbc.get_coord(trajPos[0][at])
+      coeff[trajPos[0][at].elt] = coeff[trajPos[0][at].elt] + 1
+  rho0 = float(Mass)/float(Vol)
+  for key in coeff:
+    coeff[key] = float(coeff[key])/float(Mass*Atoms_Numb)
+
+  print coeff
+  print rho0, Mass
+
+  cple = {}
+  count = 0
+  for k1 in range(N):
+    for k2 in range(N):
+      cple[str(k1)+str(k2)] = count
+      count = count + 1
+      gr_list.append(Used_elements[k1]+"-"+Used_elements[k2])
+  print cple
+  print len(cple)
+  Ngr = len(cple)+1
+  sumcb = 0
+  for e in range(N):
+    sumcb = sumcb + Atfact[Used_elements[e]]*coeff[Used_elements[e]]
+  with open(gr_name,"w") as gr_file:
+    write = gr_file.write
+    print "First frame is", first_step, "for simulation", tmp_name
+    print Used_elements
+    for f in range(Numb_Steps):
+      traj = trajPos[f]
+      gr=np.zeros([Ngr,irmax+1])
+      for i in range(Atoms_Numb):
+        atom1 = traj[i]
+        coord1 = pbc.get_coord(atom1)
+        elt1 = atom1.elt
+        for j in range(Atoms_Numb):
+          atom2 = traj[j]
+          coord2 = pbc.get_coord(atom2)
+          d12 = pbc.distance_cart(coord1,coord2,Cell)
+          elt2 = atom2.elt
+          rd = int(math.floor(d12/dr))
+          k1 = Used_elements.index(atom1.elt)
+          k2 = Used_elements.index(atom2.elt)
+          tri = cple[str(k1)+str(k2)]
+          if (rd<irmax+1 and rd>0):
+            gr[tri,rd]=gr[tri,rd]+1.0/(Atoms_Numb*coeff[elt1]*coeff[elt2]*rho0*4.0*np.pi*dr*(float(rd)*dr)**2)
+            #nr[tri,rd]=nr[tri,rd]+1.0/(Atoms_Numb*coeff[elt1])
+      gr2=np.zeros([Ngr,irmax+1])
+      for tri2 in cple:
+        for R in range(1,irmax+1):
+          elt1 = int(list(tri2)[0])
+          elt2 = int(list(tri2)[1])
+          foo = cple[str(elt1)+str(elt2)]
+          gr2[foo,R]=4.0*np.pi*R*dr*rho0*(gr[foo,R]-1.0)*Atfact[Used_elements[elt1]]*Atfact[Used_elements[elt2]]*coeff[Used_elements[elt1]]*coeff[Used_elements[elt2]]
+      for R in range(1,irmax+1):
+        gr2[Ngr-1,R] = np.sum(gr2[0:Ngr-1,R])
+      write("\n Step number = "+str(f)+","+str(f*delta+first_step)+"\n")
+      write('\t'.join(gr_list)+"\n")
+      for i in range(irmax):
+        write(str(float(i*dr))+ "\t")
+        for j in range(len(gr)):
+          write(str(gr2[j,i])+"\t")
+        write(str(style)+"\n")
+      if (f==Numb_Steps-1): print "Last frame is", first_step+Numb_Steps*delta, "and it is written"
+      #gr=np.zeros([Ngr,irmax+1])
+      write("\n\n")
+      style=style+1
+  return 0
+
+if __name__=="__main__":
+  main(sys.argv)

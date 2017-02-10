@@ -1,0 +1,14 @@
+*.log
+*.out
+*old*
+cmake
+*backup*
+*Backup*
+*check*
+jmol
+VESTA*
+XDbus
+curie
+crystalsub
+crystal.sh
+energies_rescale

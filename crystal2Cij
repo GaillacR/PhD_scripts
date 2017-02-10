@@ -1,0 +1,148 @@
+#!/usr/bin/env python
+import os
+import sys
+from math import *
+import numpy as np
+
+# Function definitions
+def getlines(Cij_file):
+  lines=[]
+  for line in Cij_file:
+    lines.append(line)
+  return(lines)
+
+# Checking usage
+if len(sys.argv)<2 :
+  print "Usage: " + sys.argv[0] + " crystal output files basename (like file1 file2, not file1.out file2.out) and optionally crystal class (hexa/cubic) "
+  exit(1)
+
+Cij = [[0.0 for i in range(6)] for j in range(6)]
+figures = ["1","2","3","4","5","6"]
+counter = 0
+# Actual extraction of symmetrized elastic tensor
+with open(sys.argv[1]+".out","r") as cryst:
+  crystlines = getlines(cryst)
+  i0=0
+  for i in range(len(crystlines)):
+    sp = crystlines[i].split()
+    if (len(sp)==0): sp="0"
+    c = "0"
+    fst = "0"
+    scd = "0"
+    if (len(list(sp[0]))==3):
+      c = list(sp[0])[0]
+      fst = list(sp[0])[1]
+      scd = list(sp[0])[2]
+    if len(sp)>2:
+      if (sp[0]=="SYMMETRIZED" and sp[1]=="ELASTIC"):
+        i0=i
+      if (c == "c" and fst in figures and scd in figures):
+        Cij[int(fst)-1][int(scd)-1] = float(sp[2])
+        counter = counter+1
+  if (i0>10 and counter<36):
+    with open(sys.argv[1]+".cij","w") as cij:
+      for k in range(2,8):
+        cij.write(crystlines[i0+k])
+  else:
+    if (len(sys.argv)>2 and sys.argv[-1]!="hexa" and sys.argv[-1]!="cubic"):
+      for k in range(len(sys.argv)-1):
+        with open(sys.argv[k+1]+".out","r") as fin:
+          for line in fin:
+            sp = line.split()
+            if (len(sp)==0): sp="0"
+            c = "0"
+            fst = "0"
+            scd = "0"
+            if (len(list(sp[0]))==3):
+              c = list(sp[0])[0]
+              fst = list(sp[0])[1]
+              scd = list(sp[0])[2]
+            if (len(c)>1): fst = list(sp[0])[1]
+            if (len(c)>1): scd = list(sp[0])[2]
+            if (c == "c" and fst in figures and scd in figures): Cij[int(fst)-1][int(scd)-1] = float(sp[2])
+    elif (len(sys.argv)>2 and sys.argv[-1]=="hexa"):
+      for k in range(len(sys.argv)-2):
+        with open(sys.argv[k+1]+".out","r") as fin:
+          for line in fin:
+            sp = line.split()
+            if (len(sp)==0): sp="0"
+            c = "0"
+            fst = "0"
+            scd = "0"
+            if (len(list(sp[0]))==3):
+              c = list(sp[0])[0]
+              fst = list(sp[0])[1]
+              scd = list(sp[0])[2]
+            if (len(c)>1): fst = list(sp[0])[1]
+            if (len(c)>1): scd = list(sp[0])[2]
+            if (c == "c" and fst in figures and scd in figures): Cij[int(fst)-1][int(scd)-1] = float(sp[2])
+      print Cij[3][3]
+      for k in range(3):
+        for k2 in range(3):
+          Cij[k][3+k2]=0.0
+      for k in [0,1,2,4,5]:
+        Cij[3][k]=0.0
+      for k in [0,1,2,3,5]:
+        Cij[4][k]=0.0
+      for k in [0,1,2,3,4]:
+        Cij[5][k]=0.0
+      # c22=c11, c23=c13, c55=c44, c66=(c11-c12)/2  
+      tmp=Cij[0][0]
+      tmp2=Cij[1][1]
+      Cij[0][0]=(tmp+tmp2)/2.0
+      Cij[1][1]=(tmp+tmp2)/2.0
+
+      tmp=Cij[0][2]
+      tmp2=Cij[1][2]
+      Cij[0][2]=(tmp+tmp2)/2.0
+      Cij[1][2]=(tmp+tmp2)/2.0
+
+      print Cij[3][3]
+      Cij[4][4]=Cij[3][3]
+
+      Cij[5][5]=(Cij[0][0]-Cij[0][1])/2.0
+
+    elif (len(sys.argv)>2 and sys.argv[-1]=="cubic"):
+      print "Cubic"
+      for k in range(len(sys.argv)-2):
+        with open(sys.argv[k+1]+".out","r") as fin:
+          for line in fin:
+            sp = line.split()
+            if (len(sp)==0): sp="0"
+            c = "0"
+            fst = "0"
+            scd = "0"
+            if (len(list(sp[0]))==3):
+              c = list(sp[0])[0]
+              fst = list(sp[0])[1]
+              scd = list(sp[0])[2]
+            if (len(c)>1): fst = list(sp[0])[1]
+            if (len(c)>1): scd = list(sp[0])[2]
+            if (c == "c" and fst in figures and scd in figures): Cij[int(fst)-1][int(scd)-1] = float(sp[2])
+      print Cij[3][3]
+      for k in range(3):
+        for k2 in range(3):
+          Cij[k][3+k2]=0.0
+      for k in [0,1,2,4,5]:
+        Cij[3][k]=0.0
+      for k in [0,1,2,3,5]:
+        Cij[4][k]=0.0
+      for k in [0,1,2,3,4]:
+        Cij[5][k]=0.0
+      # c22=c11, c33=c11, c55=c44, c66=c44  
+      Cij[1][1]=Cij[0][0]
+      Cij[2][2]=Cij[0][0]
+      Cij[4][4]=Cij[3][3]
+      Cij[5][5]=Cij[3][3]
+      Cij[1][0]=Cij[0][1]
+      Cij[2][0]=Cij[0][2]
+
+
+    Cnp = np.array(Cij,np.float)
+    print type(Cnp), type(np.transpose(Cnp))
+    Cnp2 = Cnp + np.transpose(Cnp)
+    print type(Cnp2)
+    Cnp2 = np.true_divide(Cnp2, 2.0)
+    with open(sys.argv[1]+".cij","w") as cij:
+      cij.write('\n'.join([' '.join(['{:8}'.format(item) for item in row]) for row in Cnp2]))
+      cij.write('\n')
