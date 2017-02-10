@@ -1,0 +1,127 @@
+#!/usr/bin/env python
+
+import sys
+import PBC_RG as pbc
+import ReadWrite as rw
+
+
+# Read the cell parameters in
+cell_f = sys.argv[2]
+[Cell, Cell.C] = rw.readCell(cell_f)
+
+# Read the distances and the positions in
+trajPos = rw.readFromXYZFile(sys.argv[1] + ".xyz",10,1)
+if (len(sys.argv)>4):
+  refPos = rw.readFromXYZFile(sys.argv[4]+".xyz",1,1,1)[0]
+else:
+  refPos = trajPos[0]
+
+
+Atoms_Numb = len(trajPos[0])
+Numbsteps = len(trajPos)
+print Numbsteps
+print Atoms_Numb
+
+Outname = sys.argv[3]+"/"+sys.argv[1].split('/')[-1]+"_Im.xyz"
+print Outname
+a = open(Outname,"w")
+a.close()
+
+Traj = []
+cycles = list()
+
+############# Get the indices of the atoms composing each cycle ####
+traj=list()
+CycAtoms = list()
+ZnAtoms = list()
+frame = refPos
+L = len(frame)
+a = 0
+while(a < L):
+  if (frame[a].elt=="H"):
+    frame.remove(frame[a])
+    L = len(frame)
+    a = a - 1
+  elif (frame[a].elt not in ["H","Zn"]):
+    CycAtoms.append(frame[a])
+  elif (frame[a].elt=="Zn"):
+    ZnAtoms.append(frame[a])
+  a = a+1
+
+CycAtoms2 = CycAtoms[:]
+
+k = 0
+count = 0
+L = len(CycAtoms)
+while (k < L):
+  snap = list()
+  cycles.append(snap)
+  atoms = CycAtoms[:]
+  atoms.remove(CycAtoms[k])
+  cycle = pbc.NeiAtoms(CycAtoms[k], atoms, Cell, 4)
+  CycAtoms.remove(CycAtoms[k])
+  L = len(CycAtoms)
+  for p in range(len(cycle)):
+    l = 0
+    while (l < L):
+      dist = pbc.distance_cart(pbc.get_coord(cycle[p]),pbc.get_coord(CycAtoms[l]),Cell)
+      if (dist < 1e-4):
+        CycAtoms.remove(CycAtoms[l])
+        l = l - 1
+        L = len(CycAtoms)
+      l = l+1
+  for i in range(len(cycle)):
+    r0 = pbc.ClosestImage(pbc.get_coord(cycle[0]),pbc.get_coord(cycle[i]),Cell)
+    cycle[i] = pbc.make_point(r0[0],r0[1],r0[2],cycle[i].elt)
+  posX = pbc.Barycenter(cycle)
+  X = pbc.make_point(posX[0],posX[1],posX[2],"X")
+  for j in range(len(CycAtoms2)):
+    for p in range(len(cycle)):
+      dist = pbc.distance_cart(pbc.get_coord(cycle[p]),pbc.get_coord(CycAtoms2[j]),Cell)
+      if (dist<1e-4):
+        snap.append(j)
+####################################################################
+
+posX = [0.0,0.0,0.0]
+
+for time in range(Numbsteps):
+  #if (time%(Numbsteps/50)==0):
+  #  sys.stdout.write("\r%1.1f %%" % (float(time)*100/float(Numbsteps)))
+  #  sys.stdout.flush()
+  traj=list()
+  CycAtoms = list()
+  ZnAtoms = list()
+  frame = trajPos[time]
+  L = len(frame)
+  a = 0
+  while(a < L):
+    if (frame[a].elt=="H"):
+      frame.remove(frame[a])
+      L = len(frame)
+      a = a - 1
+    elif (frame[a].elt not in ["H","Zn"]):
+      CycAtoms.append(frame[a])
+    elif (frame[a].elt=="Zn"):
+      ZnAtoms.append(frame[a])
+    a = a+1
+
+  traj = ZnAtoms[:]
+  CycAtoms2 = CycAtoms[:]
+
+  k = 0
+  count = 0
+  L = len(CycAtoms)
+  while (k < L):
+    snap = list()
+    cycle = [CycAtoms2[cycles[count][0]],CycAtoms2[cycles[count][1]],CycAtoms2[cycles[count][2]],CycAtoms2[cycles[count][3]],CycAtoms2[cycles[count][4]]]
+    for i in range(len(cycle)):
+      r0 = pbc.ClosestImage(pbc.get_coord(cycle[0]),pbc.get_coord(cycle[i]),Cell)
+      cycle[i] = pbc.make_point(r0[0],r0[1],r0[2],cycle[i].elt)
+    posX = pbc.Barycenter(cycle)
+    X = pbc.make_point(posX[0],posX[1],posX[2],"X")
+    traj.append(X)
+    L = L-5
+    count = count + 1
+  Traj.append(traj)
+  rw.appendTrajAsXYZFile(Outname, Traj, time)
+  Traj=[]

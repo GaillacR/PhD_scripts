@@ -1,0 +1,285 @@
+#!/usr/bin/env python
+
+import sys
+import numpy as np
+import ReadWrite as rw
+import PBC_RG as pbc
+
+filename = sys.argv[1]
+cell_f = sys.argv[2]
+[Cell, Cell.C] = rw.readCell(cell_f)
+elt = sys.argv[3]
+dt = float(sys.argv[4])
+Ncyc = int(sys.argv[5])-1
+
+step = 400
+
+if (dt<2):trajPos = rw.readFromXYZFile(filename,step,10001)#,last=100000)
+elif (dt>2):trajPos = rw.readFromXYZFile(filename,1,1001)
+if (len(sys.argv)>6):
+  refPos = rw.readFromXYZFile(sys.argv[6]+".xyz",1,1,1)[0]
+else:
+  refPos = trajPos[0]
+sys.stdout.write("Trajectory read\n")
+
+############# Get the indices of the atoms composing each cycle ####
+cycles = list()
+cycles2 = list()
+CycAtoms = list()
+ZnAtoms = list()
+frame = refPos
+L = len(frame)
+a = 0
+while(a < L):
+  if (frame[a].elt=="H"):
+    frame.remove(frame[a])
+    L = len(frame)
+    a = a - 1
+  elif (frame[a].elt not in ["H","Zn"]):
+    CycAtoms.append(frame[a])
+  elif (frame[a].elt=="Zn"):
+    ZnAtoms.append(frame[a])
+  a = a+1
+
+CycAtoms2 = CycAtoms[:]
+
+k = 0
+count = 0
+L = len(CycAtoms)
+while (k < L):
+  snap = list()
+  snap2 = list()
+  cycles.append(snap)
+  cycles2.append(snap2)
+  atoms = CycAtoms[:]
+  atoms.remove(CycAtoms[k])
+  cycle = pbc.NeiAtoms(CycAtoms[k], atoms, Cell, Ncyc)
+  CycAtoms.remove(CycAtoms[k])
+  L = len(CycAtoms)
+  for p in range(len(cycle)):
+    l = 0
+    while (l < L):
+      dist = pbc.distance_cart(pbc.get_coord(cycle[p]),pbc.get_coord(CycAtoms[l]),Cell)
+      if (dist < 1e-4):
+        CycAtoms.remove(CycAtoms[l])
+        l = l - 1
+        L = len(CycAtoms)
+      l = l+1
+  for i in range(len(cycle)):
+    r0 = pbc.ClosestImage(pbc.get_coord(cycle[0]),pbc.get_coord(cycle[i]),Cell)
+    cycle[i] = pbc.make_point(r0[0],r0[1],r0[2],cycle[i].elt)
+  foo = 0
+
+  # Detecting the two nitrogens in the cycle and matching with the list of all atoms
+  for p in range(len(cycle)):
+    if (cycle[p].elt=="N"):
+      for j in range(len(CycAtoms2)):
+        dist = pbc.distance_cart(pbc.get_coord(cycle[p]),pbc.get_coord(CycAtoms2[j]),Cell)
+        if (dist<1e-4):
+          snap.append(j)
+          foo = foo + 1
+          if (foo==2): break
+
+  PosN1 = pbc.get_coord(CycAtoms2[snap[0]]) # Position of the first Nitrogen of the cycle
+  PosN2 = pbc.get_coord(CycAtoms2[snap[1]]) # Position of the second Nitrogen of the cycle
+  # Detecting the carbon between the two nitrogens 
+  for p in range(len(cycle)):
+    Elt = cycle[p].elt
+    Pos = pbc.get_coord(cycle[p])
+    if (Elt=="C"):
+      for j in range(len(CycAtoms2)):
+        dist = pbc.distance_cart(Pos,pbc.get_coord(CycAtoms2[j]),Cell)
+        if (dist<1e-4):
+          d1 = pbc.distance_cart(Pos,PosN1,Cell)
+          d2 = pbc.distance_cart(Pos,PosN2,Cell)
+          if (d1<1.9 and d2<1.9):
+            snap2.append(j)
+            break
+          #                                              C-C
+  # Detecting the two carbons between the two nitrogens /   \
+  #                                                    N     N
+  #                                                     \   /
+  #                                                       C
+  foo = 0
+  for p in range(len(cycle)):
+    Elt = cycle[p].elt
+    Pos = pbc.get_coord(cycle[p])
+    if (Elt=="C"):
+      for j in range(len(CycAtoms2)):
+        dist = pbc.distance_cart(Pos,pbc.get_coord(CycAtoms2[j]),Cell)
+        if (dist<1e-4):
+          d1 = pbc.distance_cart(Pos,PosN1,Cell)
+          d2 = pbc.distance_cart(Pos,PosN2,Cell)
+          if (d1<1.8 and d2>2.0 and j not in snap2):
+            snap2.append(j)
+            foo = foo+1
+            if (foo==2): break
+          elif (d2<1.8 and d1>2.0 and j not in snap2):
+            snap2.append(j)
+            foo = foo+1
+            if (foo==2): break
+
+
+
+####################################################################
+
+print cycles
+print cycles2
+
+nconf = len(trajPos)
+
+#test
+nconf = int(0.50*nconf)
+#test
+
+Natoms = len(trajPos[0])
+traj = [[] for x in range(nconf)]
+traj2 = [[] for x in range(nconf)]
+Nelt = len(cycles)
+
+nconf2 = nconf/4
+Orients = [[0.0 for x in range(nconf2)] for y in range(Nelt)]
+L1NN = [[0.0 for x in range(nconf2)] for y in range(Nelt)]
+L2NN = [[0.0 for x in range(nconf2)] for y in range(Nelt)]
+
+Orients2 = [[0.0 for x in range(nconf2)] for y in range(Nelt)]
+L1C2C = [[0.0 for x in range(nconf2)] for y in range(Nelt)]
+L2C2C = [[0.0 for x in range(nconf2)] for y in range(Nelt)]
+
+print nconf
+print nconf2
+
+for time in range(nconf):
+  for a in range(Natoms):
+    for b in range(a,Natoms):
+      if ([a,b] in cycles or [b,a] in cycles):
+        #print [a,b]
+        V1 = pbc.get_coord(trajPos[time][a])
+        V2 = pbc.get_coord(trajPos[time][b])
+        traj[time].append([(V1[i]-V2[i]) for i in range(3)])
+
+for time in range(nconf):
+  for a in range(Natoms):
+    for b in range(a,Natoms):
+      for c in range(a,Natoms):
+        if ([a,b,c] in cycles2):
+          V1 = pbc.get_coord(trajPos[time][a])
+          V2 = [(pbc.get_coord(trajPos[time][b])[i]+pbc.get_coord(trajPos[time][c])[i])/2.0 for i in range(3)]
+          traj2[time].append([(V1[i]-V2[i]) for i in range(3)])
+
+sys.stdout.write("All cycles extracted \n")
+
+
+DT1 = list()
+DT2 = list()
+for E in range(Nelt):
+  sys.stdout.write("\r%3.3f%%" % (float(E)*100/float(Nelt-1)))
+  for t in range(nconf2):
+    for t2 in range(nconf-t):
+      if (len(traj[t+t2]) < 24): print len(traj), len(traj[t+t2]), E, Nelt
+      N1 = pbc.Norm(traj[t+t2][E])
+      N2 = pbc.Norm(traj[t2][E])
+      DR = np.dot(traj[t+t2][E],traj[t2][E])/(N1*N2)
+      DS = pbc.Norm(np.cross(traj[t+t2][E],traj[t2][E]))/(N1*N2)
+      if (abs(DR) > 1+1e-10):
+        print DR
+        exit(1)
+      elif (abs(DR) > 1-1e-10):
+        DR=float(round(DR))
+
+      L1DR = DR
+      L2DR = 3*DR**2-1.0
+      DT = np.arccos(DR)
+      Sign = np.arcsin(DS)
+      if (Sign < 0):
+        DT = 2*np.pi - DT
+      if (t%2==1 and t>0):
+        if (DT2[t2]-DT > np.pi and DT2[t2]%(2*np.pi) > 1.8*np.pi):
+          DT = DT + 2*np.pi*(np.floor(DT2[t2]/(2*np.pi))+1)
+      DTh = DT**2
+      Orients[E][t] = Orients[E][t] + (DTh)/float(nconf-t)
+      L1NN[E][t] = L1NN[E][t] + (L1DR)/float(nconf-t)
+      L2NN[E][t] = L2NN[E][t] + (L2DR)/float(nconf-t)
+      if (abs(float(DT)/float(np.pi))>2.5):
+        print float(DT)/float(np.pi), t2, t, nconf, nconf-t, float(DR2)/float(np.pi), float(DR3)/float(np.pi)
+        print abs(2*np.pi-DT-DT2), abs(DT-DT2)
+        print "\n"
+      if (t%2==1):
+        DT1.append(DT)
+      else:
+        DT2.append(DT)
+    if (t%2==1):
+      DT2 = list()
+    else:
+      DT1 = list()
+  sys.stdout.flush()
+print "\n"
+
+DT1 = list()
+DT2 = list()
+for E in range(Nelt):
+  sys.stdout.write("\r%3.3f%%" % (float(E)*100/float(Nelt-1)))
+  for t in range(nconf2):
+    for t2 in range(nconf-t):
+      N1 = pbc.Norm(traj2[t+t2][E])
+      N2 = pbc.Norm(traj2[t2][E])
+      DR = np.dot(traj2[t+t2][E],traj2[t2][E])/(N1*N2)
+      DS = pbc.Norm(np.cross(traj2[t+t2][E],traj2[t2][E]))/(N1*N2)
+      if (abs(DR) > 1+1e-10):
+        print DR
+        exit(1)
+      elif (abs(DR) > 1-1e-10):
+        DR=float(round(DR))
+
+      L1DR = DR
+      L2DR = 3*DR**2-1.0
+      DT = np.arccos(DR)
+      Sign = np.arcsin(DS)
+      if (Sign < 0):
+        DT = 2*np.pi - DT
+      if (t%2==1 and t>0):
+        if (DT2[t2]-DT > np.pi and DT2[t2]%(2*np.pi) > 1.8*np.pi):
+          DT = DT + 2*np.pi*(np.floor(DT2[t2]/(2*np.pi))+1)
+      DTh = DT**2
+      Orients2[E][t] = Orients2[E][t] + (DTh)/float(nconf-t)
+      L1C2C[E][t] = L1C2C[E][t] + (L1DR)/float(nconf-t)
+      L2C2C[E][t] = L2C2C[E][t] + (L2DR)/float(nconf-t)
+      if (abs(float(DT)/float(np.pi))>2.5):
+        print float(DT)/float(np.pi), t2, t, nconf, nconf-t, float(DR2)/float(np.pi), float(DR3)/float(np.pi)
+        print abs(2*np.pi-DT-DT2), abs(DT-DT2)
+        print "\n"
+      if (t%2==1):
+        DT1.append(DT)
+      else:
+        DT2.append(DT)
+    if (t%2==1):
+      DT2 = list()
+    else:
+      DT1 = list()
+  sys.stdout.flush()
+print "\n"
+
+
+
+Orient = [0.0 for x in range(nconf2)]
+L1N = [0.0 for x in range(nconf2)]
+L2N = [0.0 for x in range(nconf2)]
+Orient2 = [0.0 for x in range(nconf2)]
+L1C = [0.0 for x in range(nconf2)]
+L2C = [0.0 for x in range(nconf2)]
+
+for t in range(nconf2):
+  for E in range(Nelt):
+    Orient[t] = Orient[t] + Orients[E][t]/float(Nelt)
+    L1N[t] = L1N[t] + L1NN[E][t]/float(Nelt)
+    L2N[t] = L2N[t] + L2NN[E][t]/float(Nelt)
+
+    Orient2[t] = Orient2[t] + Orients2[E][t]/float(Nelt)
+    L1C[t] = L1C[t] + L1C2C[E][t]/float(Nelt)
+    L2C[t] = L2C[t] + L2C2C[E][t]/float(Nelt)
+
+Outname = filename.split(".xyz")[0]+"_"+elt+".Imorient9"
+
+with open(Outname,"w") as fout:
+  for t in range(nconf2):
+    fout.write("%f %5.10f %5.10f %5.10f %5.10f %5.10f %5.10f \n" % (t*dt*step, Orient[t], L1N[t], L2N[t], Orient2[t], L1C[t], L2C[t]))

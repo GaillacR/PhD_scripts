@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+
+import sys
+import ReadWrite as rw
+import PBC_RG as pbc
+
+filename = sys.argv[1]
+cell_f = sys.argv[2]
+elt = sys.argv[3]
+dt = float(sys.argv[4])
+
+if (dt<2):trajPos = rw.readFromXYZFile(filename,10,1)
+elif (dt>2):trajPos = rw.readFromXYZFile(filename,1,1)
+sys.stdout.write("Trajectory read\n")
+
+nconf = len(trajPos)
+Natoms = len(trajPos[0])
+traj = [[] for x in range(nconf)]
+
+for time in range(nconf):
+  for a in range(Natoms):
+    if (trajPos[time][a].elt==elt):
+      traj[time].append(pbc.get_coord(trajPos[time][a]))
+
+sys.stdout.write("All "+elt+" extracted\n")
+#for a in range(len(traj[0])):
+#  print traj[0][a]
+
+Nelt = len(traj[0])
+
+if (dt<2): nconf2 = int(min([nconf/10,20000/(10*dt)]))
+elif (dt>2): nconf2 = int(min([nconf/10,20000/dt]))
+Rmsds = [[0.0 for x in range(nconf2)] for y in range(Nelt)]
+
+for E in range(Nelt):
+  sys.stdout.write("\r%3.3f%%" % (float(E)*100/float(Nelt-1)))
+  for t in range(nconf2):
+    for t2 in range(nconf-t):
+      DR = [(traj[t+t2][E][i]-traj[t2][E][i]) for i in range(3)]
+      Rmsds[E][t] = Rmsds[E][t] + (pbc.Norm(DR)**2)/float(nconf-t)
+  sys.stdout.flush()
+print "\n"
+
+RMSD = [0.0 for x in range(nconf2)]
+
+for t in range(nconf2):
+  for E in range(Nelt):
+    RMSD[t] = RMSD[t] + Rmsds[E][t]/float(Nelt)
+
+Outname = filename.split(".xyz")[0]+"_"+elt+".rmsd"
+
+with open(Outname,"w") as fout:
+  for t in range(nconf2):
+    if (dt<2):
+      fout.write("%f %5.10f \n" % (t*dt*10, RMSD[t]))
+    elif (dt>2):
+      fout.write("%f %5.10f \n" % (t*dt, RMSD[t]))

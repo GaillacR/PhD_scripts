@@ -1,0 +1,100 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import math, sys
+import numpy as np
+import ReadWrite as rw
+import PBC_RG as pbc
+
+
+# Find out how many configurations are stored
+nconf = rw.nconfFromDist(sys.argv[1]+".dist")
+print "#### Simulation", sys.argv[1].split("/")[-1], "####"
+print "Reading ", nconf, "configurations"
+
+# Read the cell parameters in
+cell_f = sys.argv[3]
+[Cell, Cell.C] = rw.readCell(cell_f)
+
+# Read the distances and the positions in
+trajDist = rw.readFromDistanceFile(sys.argv[1] + ".dist", nconf)
+trajPos = rw.readFromXYZFile(sys.argv[1] + "_10.xyz",1,1)
+
+# Read the correspondence between pairs and atoms in Pairs.dat
+pairs = {} # dict with [Atom1(N), Atom2(Zn)] at key pair 1-2
+nitropairs = {} # dict with [[First Pair number, Atom2(Zn)], [Second Pair number, Atom2(Zn)], [...], [Last Pair number, Atom2(Zn)]] at key Atom1(N)
+tmp = 0
+with open(sys.argv[2],"r") as pfile:
+  next(pfile)
+  for line in pfile:
+    sp = line.split()
+    pairs[int(sp[2])-1] = [int(sp[0]),int(sp[1])]
+    if (int(sp[1]) not in nitropairs):
+      if (len(nitropairs) == 0): origin = int(sp[1])
+      nitropairs[int(sp[1])] = [[int(sp[2])-1,int(sp[0])]]
+    elif (int(sp[1]) in nitropairs):
+      nitropairs[int(sp[1])].append([int(sp[2])-1,int(sp[0])])
+    tmp = int(sp[1])
+
+npairs = len(trajDist)
+
+Nitro = {}
+Zinc = {}
+
+c1 = 0
+c2 = 0
+for i in range(len(pairs)):
+  if (pairs[i][0] not in Nitro):
+    Nitro[pairs[i][0]] = c1
+    c1 = c1 + 1
+
+for i in range(len(pairs)):
+  if (pairs[i][1] not in Zinc):
+    Zinc[pairs[i][1]] = c2
+    c2 = c2 + 1
+
+rnitropairs=range(len(nitropairs[origin]))
+
+distances = [0.0 for j in rnitropairs]
+pos2 = [[0,0,0] for j in rnitropairs]
+Tangles = {}
+Tangle = [0.0 for j in range(nconf)]
+for key in nitropairs:
+  Tangles[key] = [0.0 for x in range(nconf)]
+  i = key
+  for time in range(nconf):
+    atom1 = trajPos[time][key]
+    pos1 = pbc.get_coord(atom1)
+    for n in rnitropairs:
+      atom2 = trajPos[time][nitropairs[i][n][1]]
+      pos2[n] = pbc.get_coord(atom2)
+      d = trajDist[nitropairs[i][n][0]][time]
+      distances[n] = d
+    sortdist = sorted(distances)
+    i1 = distances.index(sortdist[0])
+    i2 = distances.index(sortdist[1])
+    i3 = distances.index(sortdist[2])
+    i4 = distances.index(sortdist[3])
+    v1 = pbc.ClosestImage(pos1,pos2[i1],Cell)
+    v2 = pbc.ClosestImage(pos1,pos2[i2],Cell)
+    v3 = pbc.ClosestImage(pos1,pos2[i3],Cell)
+    v4 = pbc.ClosestImage(pos1,pos2[i4],Cell)
+    vi1 = [v1[h]-pos1[h] for h in range(3)]
+    vi2 = [v2[h]-pos1[h] for h in range(3)]
+    vi3 = [v3[h]-pos1[h] for h in range(3)]
+    vi4 = [v4[h]-pos1[h] for h in range(3)]
+    T12 = math.acos(np.dot(vi1,vi2)/(math.sqrt(np.dot(vi1,vi1))*math.sqrt(np.dot(vi2,vi2))))*180.0/np.pi
+    T13 = math.acos(np.dot(vi1,vi3)/(math.sqrt(np.dot(vi1,vi1))*math.sqrt(np.dot(vi3,vi3))))*180.0/np.pi
+    T14 = math.acos(np.dot(vi1,vi4)/(math.sqrt(np.dot(vi1,vi1))*math.sqrt(np.dot(vi4,vi4))))*180.0/np.pi
+    T24 = math.acos(np.dot(vi2,vi4)/(math.sqrt(np.dot(vi2,vi2))*math.sqrt(np.dot(vi4,vi4))))*180.0/np.pi
+    T23 = math.acos(np.dot(vi2,vi3)/(math.sqrt(np.dot(vi2,vi2))*math.sqrt(np.dot(vi3,vi3))))*180.0/np.pi
+    T34 = math.acos(np.dot(vi4,vi3)/(math.sqrt(np.dot(vi4,vi4))*math.sqrt(np.dot(vi3,vi3))))*180.0/np.pi
+    Tangles[i][time] = (T12+T13+T14+T23+T24+T34)/6
+    Tangle[time]=Tangle[time]+Tangles[i][time]/len(nitropairs)
+
+with open(sys.argv[1]+".Tangle","w") as out:
+  for t in range(nconf):
+    out.write(str(t*5)+" "+str(Tangle[t])+" "+str(Tangles[Tangles.keys()[0]][t])+"\n")
+
+
+print "############################################################\n\n"

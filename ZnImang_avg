@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import math, sys
+import numpy as np
+import ReadWrite as rw
+import PBC_RG as pbc
+
+
+# Read the cell parameters in
+cell_f = sys.argv[2]
+[Cell, Cell.C] = rw.readCell(cell_f)
+
+# Read the the positions in
+trajPos = rw.readFromXYZFile(sys.argv[1] + ".xyz",1,1)
+
+nconf = len(trajPos)
+Natoms = len(trajPos[0])
+
+angle = [0.0 for x in range(nconf)]
+
+for t in range(nconf):
+  angles = list()
+  Zns = list()
+  Ims = list()
+  for i in range(Natoms):
+    if (trajPos[t][i].elt=="Zn"):
+      Zns.append(trajPos[t][i])
+    elif (trajPos[t][i].elt=="X"):
+      Ims.append(trajPos[t][i])
+  for j in range(len(Ims)):
+    Zns2 = Zns[:]
+    Zn1 = pbc.NeiAtoms(Ims[j],Zns2,Cell,n=1,dmax=10)[1]
+    Zns2 = Zns[:]
+    for k in range(len(Zns2)):
+      if (pbc.distance_cart(pbc.get_coord(Zn1),pbc.ClosestImage(pbc.get_coord(Zn1),pbc.get_coord(Zns2[k]),Cell),Cell)<0.1):
+        Zns2.remove(Zns2[k])
+        break
+    Zn2 = pbc.NeiAtoms(Ims[j],Zns2,Cell,n=1,dmax=10)[1]
+    angles.append(pbc.Angle(Zn1,Ims[j],Zn2,Cell))
+  angle[t] = sum(angles)/float(len(angles))
+
+with open(sys.argv[1]+".ZnImang","w") as out:
+  for t in range(nconf):
+    out.write(str(t*5)+" "+str(angle[t])+"\n")
+
+
+print "############################################################\n\n"
