@@ -1,0 +1,185 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import sys
+import math
+import ReadWrite as rw
+
+# Find out how many configurations are stored
+nconf = rw.nconfFromDist(sys.argv[1]+".dist")
+print "#### Simulation", sys.argv[1].split("/")[-1], "####"
+print "Reading ", nconf, "configurations"
+
+# Read the distances in
+trajDist = rw.readFromDistanceFile(sys.argv[1] + ".dist", nconf)
+
+# Read the correspondence between pairs and atoms in Pairs.dat
+pairs = {} # dict with [Atom1(N), Atom2(Zn)] at key pair 1-2
+nitropairs = {} # dict with [[First Pair number, Atom1(N)], [Second Pair number, Atom1(N)], [...], [Last Pair number, Atom1(N)]] at key Atom2(Zn)
+
+with open(sys.argv[2],"r") as pfile:
+  next(pfile)
+  for line in pfile:
+    sp = line.split()
+    Ni = int(sp[0])   # Nitrogen number
+    Zi = int(sp[1])   # Zinc number
+    Pa = int(sp[2])-1 # Pair number
+    pairs[Pa] = [Ni,Zi]
+    if (Zi not in nitropairs):
+      if (len(nitropairs) == 0): origin = Zi
+      nitropairs[Zi] = [[Pa,Ni]]
+    elif (Zi in nitropairs):
+      nitropairs[Zi].append([Pa,Ni])
+
+npairs = len(trajDist) # Number of pairs
+
+distances = [0.0 for j in range(len(nitropairs[origin]))]
+nitro_active = {}
+deltaT = 1
+cutoff = 2
+cutoff2 = 4
+for key in nitropairs: # Loop over all Zn
+  i = key
+  [coord_index, second_index, third_index, fourth_index] = [-10 for x in range(4)]
+  tmp = [2000 for x in range(4)]
+  for time in range(nconf):
+    for n in range(len(nitropairs[origin])):  # Loop over all N
+      d = trajDist[nitropairs[i][n][0]][time]
+      distances[n] = d
+    sortdist = sorted(distances) # Sorting the distances to get the surrounding N
+    if (sortdist[0]<=cutoff):    # Is the closest N coordinated?
+
+      if (coord_index == -10):   # If first step, create coordination list
+        coord_index = distances.index(sortdist[0])
+        second_index = distances.index(sortdist[1])
+        third_index = distances.index(sortdist[2])
+        fourth_index = distances.index(sortdist[3])
+        nitro_active[i] = [[coord_index, time, nitropairs[i][coord_index][0],\
+                            second_index, third_index, fourth_index]]
+        tmp = [coord_index,second_index,third_index,fourth_index]
+
+      elif ((distances.index(sortdist[0]) not in tmp) or\
+            (distances.index(sortdist[1]) not in tmp and sortdist[1]<=cutoff) or\
+            (distances.index(sortdist[2]) not in tmp and sortdist[2]<=cutoff) or\
+            (distances.index(sortdist[3]) not in tmp and sortdist[3]<=cutoff)):   # Check if one of the 4 surrounding N is different than previously
+                                                                                  # i.e. an exchange has occurred
+        if (len(nitro_active[i])==1):
+          if (trajDist[nitropairs[i][nitro_active[i][-1][3]][0]][time]>cutoff2 and trajDist[nitro_active[i][-1][2]][time]<cutoff2):
+            nitro_active[i][-1] = [nitro_active[i][-1][3], nitro_active[i][-1][1], nitropairs[i][nitro_active[i][-1][3]][0],\
+                                   nitro_active[i][-1][0], nitro_active[i][-1][4], nitro_active[i][-1][5]]
+          elif (trajDist[nitropairs[i][nitro_active[i][-1][4]][0]][time]>cutoff2 and trajDist[nitro_active[i][-1][2]][time]<cutoff2):
+            nitro_active[i][-1] = [nitro_active[i][-1][4], nitro_active[i][-1][1], nitropairs[i][nitro_active[i][-1][4]][0],\
+                                   nitro_active[i][-1][3], nitro_active[i][-1][0], nitro_active[i][-1][5]]
+          elif (trajDist[nitropairs[i][nitro_active[i][-1][5]][0]][time]>cutoff2 and trajDist[nitro_active[i][-1][2]][time]<cutoff2):
+            nitro_active[i][-1] = [nitro_active[i][-1][5], nitro_active[i][-1][1], nitropairs[i][nitro_active[i][-1][5]][0],\
+                                   nitro_active[i][-1][3], nitro_active[i][-1][4], nitro_active[i][-1][0]]
+        else:
+          if (trajDist[nitropairs[i][nitro_active[i][-1][3]][0]][time]>cutoff2 and trajDist[nitro_active[i][-1][2]][time]<cutoff2):
+            nitro_active[i].append([nitro_active[i][-1][3], nitro_active[i][-1][1], nitropairs[i][nitro_active[i][-1][3]][0],\
+                                   nitro_active[i][-1][0], nitro_active[i][-1][4], nitro_active[i][-1][5]])
+
+          elif (trajDist[nitropairs[i][nitro_active[i][-1][4]][0]][time]>cutoff2 and trajDist[nitro_active[i][-1][2]][time]<cutoff2):
+            nitro_active[i].append([nitro_active[i][-1][4], nitro_active[i][-1][1], nitropairs[i][nitro_active[i][-1][4]][0],\
+                                   nitro_active[i][-1][3], nitro_active[i][-1][0], nitro_active[i][-1][5]])
+
+          elif (trajDist[nitropairs[i][nitro_active[i][-1][5]][0]][time]>cutoff2 and trajDist[nitro_active[i][-1][2]][time]<cutoff2):
+            nitro_active[i].append([nitro_active[i][-1][5], nitro_active[i][-1][1], nitropairs[i][nitro_active[i][-1][5]][0],\
+                                   nitro_active[i][-1][3], nitro_active[i][-1][4], nitro_active[i][-1][0]])
+
+          elif (trajDist[nitro_active[i][-1][2]][time]>cutoff2 and len(nitro_active[i])>0):
+            if (len(nitro_active[i])<2):
+              nitro_active[i].append(nitro_active[i][-1])
+            elif (len(nitro_active[i])>1):
+              if (nitro_active[i][-2]!=nitro_active[i][-1]): nitro_active[i].append(nitro_active[i][-1])
+
+        coord_index = distances.index(sortdist[0])
+        if (sortdist[1]<=cutoff):
+          second_index = distances.index(sortdist[1])
+          if (sortdist[2]<=cutoff):
+            third_index = distances.index(sortdist[2])
+            if (sortdist[3]<=cutoff):
+              fourth_index = distances.index(sortdist[3])
+            else:
+              fourth_index = third_index
+          else:
+            third_index = second_index
+            fourth_index = second_index
+        else:
+          second_index = coord_index
+          third_index = coord_index
+          fourth_index = coord_index
+        indexlist = [nitro_active[i][-1][0]]
+        timelist = nitro_active[i][-1][1]
+
+        if (time>timelist+deltaT and\
+            coord_index not in indexlist and\
+            coord_index not in tmp and\
+            trajDist[nitropairs[i][indexlist[0]][0]][time]>cutoff2):
+          nitro_active[i].append([coord_index, time, nitropairs[i][coord_index][0], second_index, third_index, fourth_index])
+          tmp = [coord_index,second_index,third_index,fourth_index,nitro_active[i][-1][0]]
+
+        elif (time>timelist+deltaT and\
+              (coord_index in indexlist or coord_index in tmp) and\
+              (second_index not in indexlist and second_index not in tmp) and\
+              trajDist[nitropairs[i][indexlist[0]][0]][time]>cutoff2):
+          nitro_active[i].append([second_index, time, nitropairs[i][second_index][0], coord_index, third_index, fourth_index])
+          tmp = [coord_index,second_index,third_index,fourth_index,nitro_active[i][-1][0]]
+
+        elif (time>timelist+deltaT and\
+              (coord_index in indexlist or coord_index in tmp) and\
+              (second_index in indexlist or second_index in tmp) and\
+              (third_index not in indexlist and third_index not in tmp) and\
+              trajDist[nitropairs[i][indexlist[0]][0]][time]>cutoff2):
+          nitro_active[i].append([third_index, time, nitropairs[i][third_index][0], coord_index, second_index, fourth_index])
+          tmp = [coord_index,second_index,third_index,fourth_index,nitro_active[i][-1][0]]
+
+        elif (time>timelist+deltaT and\
+              (coord_index in indexlist or coord_index in tmp) and\
+              (second_index in indexlist or second_index in tmp) and\
+              (third_index in indexlist or third_index in tmp) and\
+              (fourth_index not in indexlist and fourth_index not in tmp) and\
+              trajDist[nitropairs[i][indexlist[0]][0]][time]>cutoff2):
+          nitro_active[i].append([fourth_index, time, nitropairs[i][fourth_index][0], coord_index, second_index, third_index])
+          tmp = [coord_index,second_index,third_index,fourth_index,nitro_active[i][-1][0]]
+
+  if (i not in nitro_active):
+    nitro_active[i] = [[]]
+  if (len(nitro_active[i])%2!=0 and len(nitro_active[i])!=1):
+    print nitro_active[i]
+    exit(1)
+
+pairs_numb = 0
+corr_numb = 0
+for i in nitropairs:
+  if (len(nitro_active[i])>1):
+    pairs_numb = pairs_numb + len(nitro_active[i])
+
+corr_numb = pairs_numb/2
+print corr_numb, pairs_numb
+
+Tmax = 5*nconf
+imax = int(math.sqrt(corr_numb))+1
+dt = float(Tmax)/float(imax)
+Wtimes = [0 for x in range(imax+1)]
+
+for i in nitropairs:
+  if (len(nitro_active[i]) >= 2):
+    times = [nitro_active[i][x][1] for x in range(len(nitro_active[i]))]
+    #print times
+    for p in range(1,len(nitro_active[i])-2,2):
+      delay = (times[p+2]-times[p])*5
+      #print delay/5.0
+      D = int(math.floor(delay/dt))
+      Wtimes[D] = Wtimes[D] + 1
+
+sum = 0
+for j in range(len(Wtimes)):
+  sum = sum + (j+0.5)*dt*Wtimes[j]
+
+Wtimes_norm = [Wtimes[x]/sum for x in range(len(Wtimes))]
+
+with open(sys.argv[1]+".wtimes","w") as fout:
+  for k in range(imax+1):
+    fout.write(str(k*dt)+" "+str(Wtimes_norm[k])+"\n")
+
+print "############################################################\n\n"

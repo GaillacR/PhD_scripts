@@ -1,0 +1,109 @@
+#!/usr/bin/env python
+
+import sys, os
+import ReadWrite as rw
+from pylab import *
+import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
+from matplotlib import rc
+import numpy as np
+
+rc('text', usetex=True)
+
+def to_percent(y, position):
+    # Ignore the passed in position. This has the effect of scaling the default
+    # tick locations.
+    s = str(100 * y)
+
+    # The percent symbol needs escaping in latex
+    if matplotlib.rcParams['text.usetex'] == True:
+        return s + r'$\%$'
+    else:
+        return s + '%'
+
+M = 5.4613e-21
+name = sys.argv[1].split("/")[-1]
+if ("zni" in name.split("_") or "ZNI" in name.split("_")):
+  M = 5.4613e-21
+elif ("zif4" in name.split("_") or "ZIF4" in name.split("_") or "ZIF-4" in name.split("_")):
+  M = 5.4613e-21
+elif ("zif8" in name.split("_") or "ZIF8" in name.split("_") or "ZIF-8" in name.split("_")):
+  M = 4.7352e-21
+
+
+ener = rw.readFromColfile(sys.argv[1]+".ener",header=20001)
+kin = ener[2]
+T = ener[3]
+pot = ener[4]
+U = [(kin[i]+pot[i]) for i in range(len(pot))]
+U2 = [(kin[i]+pot[i])**2 for i in range(len(pot))]
+
+Umoy = float(sum(U))/float(len(U))
+U2moy = float(sum(U2))/float(len(U2))
+Tmoy = float(sum(T))/float(len(T))
+Tglob = Tmoy
+
+
+Cv = (4.359744e-18)**2*(U2moy - Umoy**2)/(1.380648e-23*Tmoy**2*M)
+print Tmoy, Cv, Umoy*4.359744e-18/M
+
+period = len(pot)/10000 #period in ps
+period2 = period #period2 in ps
+split = period*2000 #translation to split
+split2 = period2*2000
+Cvlist=list()
+os.system("mkdir "+name)
+count = -1
+colors = ['b','g','r','c','m','y','k']
+for k in range(0,len(pot)-split,split2):
+  count = count+1
+  #print k*split, (k+1)*split
+  #print k
+  U = [(kin[i]+pot[i]) for i in range(k,k+split)]
+  U2 = [(kin[i]+pot[i])**2 for i in range(k,k+split)]
+  T2 = [T[i] for i in range(k,k+split)]
+
+  Umoy = float(sum(U))/float(len(U))
+  U2moy = float(sum(U2))/float(len(U2))
+  Tmoy = float(sum(T2))/float(len(T2))
+  if (abs(Tmoy-Tglob)>0.04*Tglob):
+    print "Too small window"
+    print "Average T in this window is:", Tmoy, "compared to global average:", Tglob
+    exit(1)
+  Cvlist.append(Cv)
+
+  mu = sum(U2)/len(U2)
+  UkJ = [(U2[i]-mu)*2625.5 for i in range(len(U))]
+  median = np.median(UkJ)
+  sigma = np.std(UkJ)
+  textstr = '$\mu=%.2f$\n$\mathrm{median}=%.2f$\n$\sigma=%.2f$'%(mu, median, sigma)
+  # plot and fit
+  ###############k###############################
+  fig=plt.figure(1)
+  ax = fig.add_subplot(111)
+  fig.suptitle('Internal Energy distribution')
+  ax.set_ylabel('Intensity')
+  ax.set_xlabel('U (kJ/mol)')
+
+
+  #props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+  #ax.text(0.7, 0.95, textstr, transform=ax.transAxes, fontsize=14,
+         # verticalalignment='top', bbox=props)
+
+  nbins=np.sqrt(len(UkJ))
+  print nbins
+  weights = np.ones_like(UkJ)/float(len(UkJ))
+  #y,binEdges,foo=plt.hist(UkJ, bins=nbins/10, range=[min(UkJ),max(UkJ)], weights=weights, edgecolor="none")
+  y,binEdges=np.histogram(UkJ, bins=nbins/10, range=[min(UkJ),max(UkJ)], weights=weights)
+
+  bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+  plt.plot(bincenters,y,colors[count]+'-',linewidth=3,label=str(k/2000)+'-'+str((k+split)/2000))
+  plt.legend()
+
+  formatter = FuncFormatter(to_percent)
+  # Set the formatter
+  plt.gca().yaxis.set_major_formatter(formatter)
+
+  plt.savefig(name+'/'+str(k/2000)+"-"+str((k+split)/2000)+'_Udist.png', dpi=600)
+  ###############################################
+

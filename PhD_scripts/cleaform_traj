@@ -1,0 +1,209 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import math, sys
+import numpy as np
+import ReadWrite as rw
+
+# Find out how many configurations are stored
+nconf = rw.nconfFromDist(sys.argv[1]+".dist")
+print "#### Simulation", sys.argv[1].split("/")[len(sys.argv[1].split("/"))-1], "####"
+print "Reading ", nconf, "configurations\n"
+
+# Read the distances in
+trajDist = rw.readFromDistanceFile(sys.argv[1] + ".dist", nconf)
+
+npairs = len(trajDist)
+Isexch = 0
+foo = 0
+cut1 = float(sys.argv[2])
+cut2 = float(sys.argv[3])
+
+pairs={}
+active=[]
+
+for i in range(npairs):
+  foo = 0
+  for k in range(nconf):
+   d = float(trajDist[i][k])
+   if (d < cut1 and foo==0):
+     foo = 1
+   if (d > cut2 and foo == 1 and i not in active):
+     Isexch = Isexch+1
+     pairs[i]=[k,1]
+     active.append(i)
+     foo = 0
+  foo = 0
+  for k in range(nconf):
+   d = float(trajDist[i][k])
+   if (d > cut2 and foo==0):
+     foo = 1
+   if (d < cut1 and foo == 1):
+     Isexch = Isexch+1
+     if (i in active):
+       if (k<pairs[i][0]): pairs[i]=[k,2]
+     elif (i not in active):
+       active.append(i)
+       pairs[i] = [k,2]
+     foo = 0
+
+trans1_times=[]
+trans2_times=[]
+res1_times=[]
+res2_times=[]
+N_break = 0
+N2_break = 0
+N_form = 0
+N2_form = 0
+N_ref = 0
+N_reb = 0
+
+N_evt = [1 for i in range(len(active))]
+count = -1
+cleavages = list()
+formations = list()
+
+for pair in active:
+  count = count + 1
+  t2 = 0
+  evt = pairs[pair][1]
+  foo = evt
+  if(evt==1): N_break = N_break+1
+  if(evt==2): N_form = N_form+1
+  # t0 is the moment when the first event happens
+  t0 = pairs[pair][0]
+  # Go back on the trajectory to compute the transition time
+  for time in range(t0,0,-1):
+    dist = float(trajDist[pair][time])
+    if (evt==1):
+      if (dist < cut1):
+        trans1_times.append((t0-time)*5) # From coordinated to unbound
+        tau = (t0+time)/2
+        if (tau>100 and tau<nconf-102):
+          cleav = [trajDist[pair][k] for k in range(tau-100,tau+101)]
+          cleavages.append(cleav)
+        break
+    elif (evt==2):
+      if (dist > cut2):
+        trans2_times.append((t0-time)*5) # From unbound to coordinated
+        tau = (t0+time)/2
+        if (tau>100 and tau<nconf-102):
+          form = [trajDist[pair][k] for k in range(tau-100,tau+101)]
+          formations.append(form)
+        break
+  # Go forward to find out how long this pair remains in this state
+  for time in range(t0,nconf,1):
+    dist = float(trajDist[pair][time])
+    if (evt==1):
+      if (dist < cut1):
+        foo = 2 # bound state
+        for time2 in range(time,t0,-1):
+          dist2 = float(trajDist[pair][time2])
+          if (dist2 > cut2):
+            t2 = time
+            t1 = (time2-t0)*5
+            res1_times.append(t1) # Time in unbound state
+            trans2_times.append((t2-time2)*5)
+            N_ref = N_ref + 1
+            N2_form = N2_form + 1
+            N_evt[count] = N_evt[count] + 1
+            tau = (t2+time2)/2
+            if (tau>100 and tau<nconf-102):
+              form = [trajDist[pair][k] for k in range(tau-100,tau+101)]
+              formations.append(form)
+            break
+        break
+      elif (dist > cut1 and time == nconf-1): # Last step, still in unbound state
+        t1 = (time-t0)*5
+        res1_times.append(t1) # Time in unbound state
+    elif (evt==2):
+      if (dist > cut2):
+        foo = 1 # unbound state
+        for time2 in range(time,t0,-1):
+          dist2 = float(trajDist[pair][time2])
+          if (dist2 < cut1):
+            t2 = time
+            t1 = (time2-t0)*5
+            res2_times.append(t1) # Time in coordinated state
+            trans1_times.append((t2-time2)*5)
+            N_reb = N_reb + 1
+            N2_break = N2_break + 1
+            N_evt[count] = N_evt[count] + 1
+            tau = (t2+time2)/2
+            if (tau>100 and tau<nconf-102):
+              cleav = [trajDist[pair][k] for k in range(tau-100,tau+101)]
+              cleavages.append(cleav)
+            break
+        break
+      elif (dist < cut2 and time == nconf-1): # Last step, still in bound state
+        t1 = (time-t0)*5
+        res2_times.append(t1) # Time in bound state
+  if (t2==0): t2 = t0
+  t3 = t2-1
+  while (t3 < nconf-1):
+    t3 = t3 + 1
+    dist = float(trajDist[pair][t3])
+    if (foo==2): # if the pair is in bound state look for a cleavage
+      if (dist>cut2):
+        foo = 1 # unbound state
+        for time2 in range(t3,t2,-1):
+          dist2 = float(trajDist[pair][time2])
+          if (dist2 < cut1):
+            t1 = (time2-t2)*5
+            res2_times.append(t1) # Time in coordinated state
+            t2 = t3
+            trans1_times.append((t2-time2)*5) # Time to leave the coordinated state
+            N2_break = N2_break + 1
+            N_reb = N_reb + 1
+            N_evt[count] = N_evt[count] + 1
+            tau = (t2+time2)/2
+            if (tau>100 and tau<nconf-102):
+              cleav = [trajDist[pair][k] for k in range(tau-100,tau+101)]
+              cleavages.append(cleav)
+            break
+      elif (dist < cut2 and t3 == nconf-1): # Last step, still in bound state
+        t1 = (t3-t0)*5
+        res2_times.append(t1) # Time in bound state
+    if (foo==1): # if the pair is unbound look for a formation
+      if (dist<cut1):
+        foo = 2 # bound state
+        for time2 in range(t3,t2,-1):
+          dist2 = float(trajDist[pair][time2])
+          if (dist2 > cut2):
+            t1 = (time2-t2)*5
+            res1_times.append(t1) # Time in unbound state
+            t2 = t3
+            trans2_times.append((t2-time2)*5) # Time to reform the bond
+            N2_form = N2_form + 1
+            N_ref = N_ref + 1
+            N_evt[count] = N_evt[count] + 1
+            tau = (t2+time2)/2
+            if (tau>100 and tau<nconf-102):
+              form = [trajDist[pair][k] for k in range(tau-100,tau+101)]
+              formations.append(form)
+            break
+      elif (dist > cut1 and t3 == nconf-1): # Last step, still in unbound state
+        t1 = (t3-t0)*5
+        res1_times.append(t1) # Time in unbound state
+
+avg_cleav = [0.0 for x in range(len(cleavages[0]))]
+for p in range(len(cleavages)):
+  for k in range(len(cleavages[0])):
+    avg_cleav[k] = avg_cleav[k] + cleavages[p][k]/float(len(cleavages))
+
+avg_form = [0.0 for x in range(len(formations[0]))]
+for p in range(len(formations)):
+  for k in range(len(formations[0])):
+    avg_form[k] = avg_form[k] + formations[p][k]/float(len(formations))
+
+with open(sys.argv[1].split("/")[-1]+".alltest","w") as fout:
+  for p in range(min([len(cleavages),len(formations)])):
+    for k in range(len(cleavages[0])):
+      fout.write(str((k-100)*5)+" "+str(cleavages[p][k])+" "+str(formations[p][k])+"\n")
+    fout.write("\n\n")
+
+with open(sys.argv[1].split("/")[-1]+".test","w") as fout:
+  for k in range(len(cleavages[0])):
+    fout.write(str((k-100)*5)+" "+str(avg_cleav[k])+" "+str(avg_form[k])+"\n")
+
+print "############################################################\n\n"

@@ -24,3 +24,12 @@ crystal2Cij : CRYSTAL14 output to Cij matrix (result can be further analyzed by 
 crystal2cif : CRYSTAL14 output to cif file with several structures (opt steps) written by FX Coudert (coudert.name)
 distance_analysis : xyz --> dist : distance file containing the distance between a given pair of elements (mainly used for N-Zn pairs)
 energies_Si : Energy per Si from CRYSTAL14 output
+Cv : heat capacity
+Udist : Energy distribution
+U2Cv : Cv from U
+cleaform_traj : all cleavages and formations averaged
+coord_dist : coordination numbers distribution
+coord_stats : coordination numbers
+ex_traj : exchange trajectories
+timing_stats : cleavage frequencies...
+wtimes : waiting times before succesful exchange distribution

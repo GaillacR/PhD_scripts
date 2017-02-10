@@ -1,0 +1,110 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import math, sys
+import numpy as np
+import ReadWrite as rw
+
+cutoff = float(sys.argv[3])
+nconf = rw.nconfFromDist(sys.argv[1]+".dist")
+print "#### Simulation", sys.argv[1].split("/")[-1], "####"
+print "Reading ", nconf, "configurations"
+
+# Read the distances in
+trajDist = rw.readFromDistanceFile(sys.argv[1] + ".dist", nconf)
+
+# Read the correspondance between pairs and atoms in Pairs.dat
+pairs = {} # dict with [Atom1(N), Atom2(Zn)] at key pair 1-2
+with open(sys.argv[2],"r") as pfile:
+  next(pfile)
+  for line in pfile:
+    sp = line.split()
+    pairs[int(sp[2])-1] = [int(sp[0]),int(sp[1])]
+
+npairs = len(trajDist)
+
+Nitro = {}
+Zinc = {}
+
+c1 = 0
+c2 = 0
+for i in range(len(pairs)):
+  if (pairs[i][0] not in Nitro):
+    Nitro[pairs[i][0]] = c1
+    c1 = c1 + 1
+  if (pairs[i][1] not in Zinc):
+    Zinc[pairs[i][1]] = c2
+    c2 = c2 + 1
+
+NcN = [0 for i in range(nconf)]
+NcZn = [0 for i in range(nconf)]
+
+DcN = [[0 for i in range(nconf)] for j in range(6)]
+DcZn = [[0 for i in range(nconf)] for j in range(6)]
+
+tmp_N = [0 for i in range(len(Nitro))]
+tmp_Zn = [0 for i in range(len(Zinc))]
+Zn_penta = [0 for i in range(nconf)]
+Zn_hexa = [0 for i in range(nconf)]
+
+for time in range(nconf):
+  tmp_N = [0 for i in range(len(Nitro))]
+  tmp_Zn = [0 for i in range(len(Zinc))]
+  tmp_Zn_penta = [0 for i in range(len(Nitro))]
+  tmp_Zn_hexa = [0 for i in range(len(Nitro))]
+  for p in range(npairs):
+    d = float(trajDist[p][time])
+    if (d < cutoff):
+      tmp_N[Nitro[pairs[p][0]]] = tmp_N[Nitro[pairs[p][0]]] + 1
+      tmp_Zn[Zinc[pairs[p][1]]] = tmp_Zn[Zinc[pairs[p][1]]] + 1
+  for key in Zinc:
+    for ind in range(6):
+      if (tmp_Zn[Zinc[key]]==ind):
+        DcZn[ind][time] = DcZn[ind][time] + 1
+    if (tmp_Zn[Zinc[key]]==5):
+      tmp_Zn_penta[Zinc[key]] = tmp_Zn_penta[Zinc[key]] + 1
+    elif (tmp_Zn[Zinc[key]]==6):
+      tmp_Zn_hexa[Zinc[key]] = tmp_Zn_hexa[Zinc[key]] + 1
+  NcN[time] = float(sum(tmp_N))/float(len(tmp_N))
+  NcZn[time] = float(sum(tmp_Zn))/float(len(tmp_Zn))
+  Zn_penta[time] = sum(tmp_Zn_penta)
+  Zn_hexa[time] = sum(tmp_Zn_hexa)
+
+i0 = -1
+count = 0
+consec = [0 for i in range(nconf)]
+for time in range(nconf):
+  if (Zn_penta[time]==1 and i0==-1):
+    i0 = time
+    count = 1
+  elif (Zn_penta[time]==0 and i0!=-1):
+    i0 = -1
+  elif (Zn_penta[time]==1 and i0!=-1):
+    i0 = -1
+    count = count + 1
+    consec[time] = count
+
+print "Simulated time:", 5*nconf, "fs"
+print "Nitrogen coordination number (with Zn):", float(sum(NcN))/float(len(NcN))
+print "Zinc coordination number (with N):",float(sum(NcZn))/float(len(NcZn))
+print "Average proportion of zincs which are pentacoordinated:", float(int(1000000*float(sum(Zn_penta))/(float(len(Zn_penta))*float(len(Zinc)))))/float(10000), "%"
+print "Maximum number of pentacoordinated zincs at the same time:", max(Zn_penta)
+if (max(Zn_penta)>0): print "Number of frames with a pentacoordinated zinc:", sum(Zn_penta)/max(Zn_penta)
+if (max(Zn_penta)>0): print "Maximum number of consecutive frames with a pentacoordinated zinc:", max(consec), "<==>", max(consec)*5, "fs"
+print "Average number of hexacoordinated zincs for", 5*nconf, "fs of dynamics:",  float(sum(Zn_hexa))/float(len(Zn_hexa))
+print "Maximum number of hexacoordinated zincs at the same time:",  max(Zn_hexa)
+if (max(Zn_hexa)==1): print "Number of frames with a hexacoordinated zinc:", sum(Zn_hexa)
+
+with open(sys.argv[1]+".coord","w") as fout:
+  for time in range(nconf):
+    fout.write("%d %f %f %f %f %f %f\n" % (time, DcZn[0][time], DcZn[1][time], DcZn[2][time], DcZn[3][time], DcZn[4][time], DcZn[5][time]))
+
+Dc = [0.0 for i in range(6)]
+with open(sys.argv[1]+".hcoord","w") as fout:
+  for i in range(6):
+    for time in range(nconf):
+      Dc[i] = Dc[i] + DcZn[i][time]
+    fout.write("%d %f\n" % (i, Dc[i]*100/(float(nconf*len(Nitro)))))
+
+
+print "############################################################\n\n"
