@@ -8,10 +8,26 @@ import PBC_RG as pbc
 
 
 
+xyz = sys.argv[1]
+xyz_ref = sys.argv[2]
 
 # Read the trajectory and the reference positions
 trajPos = rw.readFromXYZFile(xyz + ".xyz",step=100)
-refPos = rw.readFromXYZFile(xyz+".xyz")[0]
+refPos = rw.readFromXYZFile(xyz_ref+".xyz")[0]
 
+nconf = len(trajPos)
 nat = len(refPos)
+Used = pbc.get_elements(refPos)
+print nat, Used
 
+Out = xyz.split("/")[-1]
+
+Deltas = [0.0 for y in range(nconf)]
+for t in range(nconf):
+  diff = [[0.0,0.0,0.0] for x in range(nat)]
+  for n in range(nat):
+    post = pbc.get_coord(trajPos[t][n])
+    pos0 = pbc.get_coord(refPos[n])
+    diff[n] = [post[i]-pos0[i] for i in range(3)]
+    Deltas[t] = Deltas[t]+math.fsum([diff[n][j]**2 for j in range(3)])
+  print Deltas[t]/nat
