@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+
+import sys
+import math
+import numpy as np
+import ReadWrite as rw
+import PBC_RG as pbc
+
+
+
+
+# Read the trajectory and the reference positions
+trajPos = rw.readFromXYZFile(xyz + ".xyz",step=100)
+refPos = rw.readFromXYZFile(xyz+".xyz")[0]
+
+nat = len(refPos)
+
