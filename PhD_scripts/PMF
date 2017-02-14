@@ -36,9 +36,12 @@ def main(argv):
 
   tmp_name = xyz.split('/')
   tmp_name = tmp_name[len(tmp_name)-1]
-  gr_name ="gr_"+gr_option+tmp_name+str(first_step)
+  if (gr_option.split("=")[0]=="delta"):
+    gr_name ="gr_d"+str(int(gr_option.split("=")[1]))+tmp_name+str(first_step)
+  else:
+    gr_name ="gr_"+gr_option+tmp_name+str(first_step)
 
-  dr=0.05
+  dr=0.01
   #rmax=math.sqrt(a**2+b**2+c**2)/2
   rmax=min([a/2,b/2,c/2])
   irmax=int((rmax/dr)-1)
@@ -46,7 +49,7 @@ def main(argv):
 
   gr_list=["#### r"]
   last_step = 1e15
-  if (gr_option=="allend"): last_step = int(argv[-1])
+  if (gr_option=="allend" or gr_option=="delta=2"): last_step = int(argv[-1])
 
   delta = 10
   if (gr_option=="min"):
