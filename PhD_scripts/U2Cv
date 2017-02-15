@@ -15,7 +15,10 @@ Utmp = 0
 with open(sys.argv[3],"r") as fin:
   with open(sys.argv[3]+"U2",'w') as fout:
     for line in fin:
-      if (cl==0): 
+      if ("#" in line.split()):
+        continue
+      if (cl==0):
+        print line.split()
         Utmp = float(line.split()[colU])
         Ttmp = float(line.split()[colT])
       U = float(line.split()[colU])
