@@ -32,6 +32,6 @@ for t in range(nconf):
   for n in range(nat):
     post = pbc.get_coord(trajPos[t][n])
     pos0 = pbc.get_coord(refPos[n])
-    diff[n] = pbc.distance_cart(post[i],pos0[i],Cell)
+    diff[n] = pbc.distance_cart(post,pos0,Cell)
     Deltas[t] = Deltas[t]+diff[n]**2
   print t, Deltas[t]/nat
