@@ -3,12 +3,12 @@ import os
 import sys
 from math import *
 
+# Define list of elements
+Elements=["H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg","Al","Si","P","S","Cl","Ar","K","Ca","Sc","Ti","V","Cr","Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr","Rb","Sr","Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd","In","Sn","Sb","Te","I","Xe","Cs","Ba","La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf","Ta","W","Re","Os","Ir","Pt","Au","Hg","Tl","Pb","Bi","Po","At","Rn","Fr","Ra","Ac","Th","Pa","U"]
 
-#sname=(os.getcwd()).split("/")
-#name=sname[len(sname)-1]
 if len(sys.argv)!=2 :
-	print "Usage "+ sys.argv[0]+ " basename of cif file"
-	exit(1)
+  print "Usage "+ sys.argv[0]+ " basename of cif file"
+  exit(1)
 name=sys.argv[1]
 print name
 cifname=name+".cif"
@@ -16,68 +16,68 @@ outname=name+".d12"
 
 AtomsNumb=0
 with open(cifname,"r") as cif:
-	for line in cif:
-		info=line.split()
-		if (len(info)>1):
-			if (info[0]=="_space_group_IT_number" or info[0]=="_symmetry_group_IT_number" or info=="_symmetry_Int_Tables_number"):
-				GroupNumb=info[1]
-				print GroupNumb
-			elif (info[0]=="Si" or info[1]=="Si" and info[0]!="#"):
-				AtomsNumb=AtomsNumb+1
-			elif (info[0]=="O" or info[1]=="O" and info[0]!="#"):
-				AtomsNumb=AtomsNumb+1
-			elif (info[0]=="_cell_length_a"):
-				a = float(info[1])	
-			elif (info[0]=="_cell_length_b"):
-				b = float(info[1])	
-			elif (info[0]=="_cell_length_c"):
-				c = float(info[1])	
-			elif (info[0]=="_cell_angle_alpha"):
-				alpha = float(info[1])
-			elif (info[0]=="_cell_angle_beta"):
-				beta = float(info[1])
-			elif (info[0]=="_cell_angle_gamma"):
-				gamma = float(info[1])
-			
+  for line in cif:
+    info=line.split()
+    if (len(info)>1):
+      if (info[0]=="_space_group_IT_number" or info[0]=="_symmetry_group_IT_number" or info[0]=="_symmetry_Int_Tables_number"):
+        GroupNumb=info[1]
+        print GroupNumb
+      elif (info[0] in Elements or info[1] in Elements):
+        AtomsNumb=AtomsNumb+1
+      elif (info[0]=="_cell_length_a"):
+        a = float(info[1])
+      elif (info[0]=="_cell_length_b"):
+        b = float(info[1])
+      elif (info[0]=="_cell_length_c"):
+        c = float(info[1])
+      elif (info[0]=="_cell_angle_alpha"):
+        alpha = float(info[1])
+      elif (info[0]=="_cell_angle_beta"):
+        beta = float(info[1])
+      elif (info[0]=="_cell_angle_gamma"):
+        gamma = float(info[1])
+
+print AtomsNumb
 with open(cifname,"r") as cif:
-	with open(outname,"w") as d12:
-		d12.write(name+"\n")
-		d12.write("CRYSTAL\n")
-		d12.write("0 0 0\n")
-		d12.write(GroupNumb+"\n")
-		d12.write(str(a))
-		if (b!=a): d12.write(" "+str(b))
-		if (c!=a and c!=b): d12.write(" "+str(c))
-		if (alpha!=90.0 or beta!=90.0 or gamma!=90.0):
-			if (alpha!=90.0):
-				d12.write(" "+str(alpha))
-				if (beta!=alpha and beta!=90.0):
-					d12.write(" "+str(beta))
-				if (gamma!=beta and gamma!=alpha and gamma!=90.0):
-					d12.write(" "+str(gamma)+"\n")
-				else:
-					d12.write("\n")
-			elif (alpha==90.0 and beta!=90.0):
-				d12.write(" "+str(beta))
-				if (gamma!=beta and gamma!=90.0):
-					d12.write(" "+str(gamma)+"\n")
-				else:
-					d12.write("\n")
-			elif (alpha==90 and beta==90):
-				d12.write(" "+str(gamma)+"\n")
-		else:
-			d12.write("\n")
-		cif.seek(0)
-		d12.write(str(AtomsNumb)+"\n")
-		for line in cif:
-			info=line.split()
-			if (len(info)>3):
-				if (info[0]=="Si" or info[1]=="Si" and info[0]!="#"):
-					d12.write("14 "+str(float(info[2]))+" "+str(float(info[3]))+" "+str(float(info[4]))+"\n")
-				elif (info[0]=="O" or info[1]=="O" and info[0]!="#"):
-					d12.write("8 "+str(float(info[2]))+" "+str(float(info[3]))+" "+str(float(info[4]))+"\n")
-		d12.write("ELASTCON\nMAXCYCLE\n1000\nPREOPTGEOM\nEND\nBASISSET\nPOB-TZVP\nDFT\nPBESOLXC\nENDDFT\nFMIXING\n40\nLEVSHIFT\n5 0\nTOLINTEG\n7 7 7 7 14\nTOLDEE\n8\nGRIMME\n0.75 20. 25.\n2\n14 9.23 1.716\n8 0.70 1.342\n")
-		shrink=int(ceil(20.0/min(a,b,c)))
-		print shrink
-		d12.write("SHRINK\n"+str(shrink)+" "+str(shrink)+"\nBIPOSIZE\n40000000\nEXCHSIZE\n40000000\nEND")
-		
+  with open(outname,"w") as d12:
+    d12.write(name+"\n")
+    d12.write("CRYSTAL\n")
+    d12.write("0 0 0\n")
+    d12.write(GroupNumb+"\n")
+    d12.write(str(a))
+    if (b!=a): d12.write(" "+str(b))
+    if (c!=a and c!=b): d12.write(" "+str(c))
+    if (alpha!=90.0 or beta!=90.0 or gamma!=90.0):
+      if (alpha!=90.0):
+        d12.write(" "+str(alpha))
+        if (beta!=alpha and beta!=90.0):
+          d12.write(" "+str(beta))
+        if (gamma!=beta and gamma!=alpha and gamma!=90.0):
+          d12.write(" "+str(gamma)+"\n")
+        else:
+          d12.write("\n")
+      elif (alpha==90.0 and beta!=90.0):
+        d12.write(" "+str(beta))
+        if (gamma!=beta and gamma!=90.0):
+          d12.write(" "+str(gamma)+"\n")
+        else:
+          d12.write("\n")
+      elif (alpha==90 and beta==90):
+        d12.write(" "+str(gamma)+"\n")
+    else:
+      d12.write("\n")
+    cif.seek(0)
+    d12.write(str(AtomsNumb)+"\n")
+    for line in cif:
+      info=line.split()
+      if (len(info)>3):
+        if (info[0] in Elements or info[1] in Elements):
+          try:
+            d12.write(str(Elements.index(info[0])+1)+" "+str(float(info[2]))+" "+str(float(info[3]))+" "+str(float(info[4]))+"\n")
+          except (TypeError, IndexError) as e:
+            d12.write(str(Elements.index(info[0])+1)+" "+str(float(info[1]))+" "+str(float(info[2]))+" "+str(float(info[3]))+"\n")
+    d12.write("ELASTCON\nMAXCYCLE\n1000\nPREOPTGEOM\nEND\nBASISSET\nPOB-TZVP\nDFT\nPBESOLXC\nENDDFT\nFMIXING\n40\nLEVSHIFT\n5 0\nTOLINTEG\n7 7 7 7 14\nTOLDEE\n8\nGRIMME\n0.75 20. 25.\n2\n14 9.23 1.716\n8 0.70 1.342\n")
+    shrink=int(ceil(20.0/min(a,b,c)))
+    print shrink
+    d12.write("SHRINK\n"+str(shrink)+" "+str(shrink)+"\nBIPOSIZE\n40000000\nEXCHSIZE\n40000000\nEND")
+
