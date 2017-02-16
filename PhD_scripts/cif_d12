@@ -19,7 +19,7 @@ with open(cifname,"r") as cif:
 	for line in cif:
 		info=line.split()
 		if (len(info)>1):
-			if (info[0]=="_space_group_IT_number" or info[0]=="_symmetry_group_IT_number"):
+			if (info[0]=="_space_group_IT_number" or info[0]=="_symmetry_group_IT_number" or info=="_symmetry_Int_Tables_number"):
 				GroupNumb=info[1]
 				print GroupNumb
 			elif (info[0]=="Si" or info[1]=="Si" and info[0]!="#"):
