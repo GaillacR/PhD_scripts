@@ -66,6 +66,8 @@ def readblocks(infile,nblocks,ncols,nlines,N):
   infile.seek(0)
   return blocks
 
+if (len(sys.argv)<3):
+  print "Usage", sys.argv[0], "option(all or number of conf to average) g(r) filenames"
 
 
 nconf = [0 for x in range(len(sys.argv)-2)]
