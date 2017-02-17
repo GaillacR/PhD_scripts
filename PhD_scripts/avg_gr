@@ -72,8 +72,8 @@ if (sys.argv[2]=="all"):
 elif (sys.argv[2]!="all"):
   N = int(sys.argv[2])
 
-with open(sys.argv[1],"r") as fin:
-  with open(sys.argv[1]+"_avg","w") as fout:
+with open(sys.argv[1]+"_avg","w") as fout:
+  with open(sys.argv[1],"r") as fin:
     count=0
     line=""
     while (count<3):
