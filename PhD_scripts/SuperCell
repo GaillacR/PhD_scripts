@@ -7,14 +7,34 @@ import numpy as np
 
 s=1
 if (len(sys.argv)==7): s = int(sys.argv[6])
-Intraj = rw.readFromXYZFile(sys.argv[1],step=s,first=1)
 [Cell,Cell.C] = rw.readCell(sys.argv[2])
 
-print len(Intraj)
 factor = sys.argv[3]+sys.argv[4]+sys.argv[5]
 name = sys.argv[1].split(".xyz")[-2]+"_"+factor+".xyz"
 print name
 
+first_step = 1
+try:
+  print "Looking for existing", name
+  Existtraj = rw.readFromXYZFile(name,step=1000,first=1)
+  print name, "read every 1000"
+  f2 = len(Existtraj)-1
+  Existtraj = rw.readFromXYZFile(name,step=100,first=f2*1000)
+  print name, "read every 100"
+  f3 = len(Existtraj)-1
+  Existtraj = rw.readFromXYZFile(name,step=10,first=f2*1000+f3*100)
+  print name, "read every 10"
+  f4 = len(Existtraj)-1
+  print f2*1000+f3*100+f4*10
+  Existtraj = rw.readFromXYZFile(name,step=1,first=f2*1000+f3*100+f4*10)
+  f5 = len(Existtraj)-1
+  first_step = f2*1000+f3*100+f4*10+f5
+  print f2, f3, f4, f5
+except IOError:
+  pass
+print first_step
+
+Intraj = rw.readFromXYZFile(sys.argv[1],step=s,first=first_step)
 
 sx = 1
 sy = 1
@@ -68,5 +88,6 @@ for f in range(len(Intraj)):
   Co3=[pbc.make_point(Co2[i][0],Co2[i][1],Co2[i][2],str(El[i])) for i in range(len(Co2))]
   traj.append(Co3)
 
-  rw.appendTrajAsXYZFile(name, traj, f)
+  rw.appendTrajAsXYZFile(name, traj, f+first_step)
 
+print name, "generated succesfully\n"
