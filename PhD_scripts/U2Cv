@@ -3,17 +3,20 @@
 import sys
 
 if (len(sys.argv)<4):
-  print "Usage", sys.argv[0], "column number for T, column number for U, U(T) filename"
+  print "Usage", sys.argv[0], "U(T) filename, column number for T, column number for U + (optional) column number for sigma(U)"
   exit(1)
 
 
-colT = int(sys.argv[1])-1
-colU = int(sys.argv[2])-1
+colT = int(sys.argv[2])-1
+colU = int(sys.argv[3])-1
+colsU = colU
+if (len(sys.argv)==5):
+  colsU = int(sys.argv[4])-1
 
 cl = 0
 Utmp = 0
-with open(sys.argv[3],"r") as fin:
-  with open(sys.argv[3]+"U2",'w') as fout:
+with open(sys.argv[1],"r") as fin:
+  with open(sys.argv[1]+"U2Cv",'w') as fout:
     for line in fin:
       if ("#" in line.split()):
         continue
@@ -21,11 +24,14 @@ with open(sys.argv[3],"r") as fin:
         print line.split()
         Utmp = float(line.split()[colU])
         Ttmp = float(line.split()[colT])
+        sUtmp = float(line.split()[colsU])
       U = float(line.split()[colU])
       T = float(line.split()[colT])
+      sU = float(line.split()[colsU])
       if (cl>0):
         DU = (U-Utmp)/(T-Ttmp)
-        fout.write(str((T+Ttmp)/2)+" "+str(DU)+"\n")
+        DCv = (sU+sUtmp)/(abs(U-Utmp))
+        fout.write(str((T+Ttmp)/2)+" "+str(DU)+" "+str(DCv)+"\n")
       Utmp = U
       Ttmp = T
       cl = cl+1
