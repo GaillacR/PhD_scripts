@@ -30,7 +30,7 @@ Tglob = Tmoy
 Cv = (4.359744e-18)**2*(U2moy - Umoy**2)/(1.380648e-23*Tmoy**2*M)
 print "#0 -", len(pot)/2000, "ps" , Tmoy, Cv, Umoy*4.359744e-18/M
 
-period = 45 #period in ps
+period = len(pot)/5 #period in ps
 period2 = period #period2 in ps
 split = period*2000 #translation to split
 split2 = period2*2000
