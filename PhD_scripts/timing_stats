@@ -19,9 +19,10 @@ foo = 0
 cut1 = float(sys.argv[2])
 cut2 = float(sys.argv[3])
 if (len(sys.argv)>4):
-  fst = int(sys.argv[4])
-else:
-  fst = 0
+  try:
+    fst = int(sys.argv[4])
+  except ValueError:
+    fst = 0
 
 pairs={}
 active=[]
@@ -201,6 +202,14 @@ if (N2_form!=0):
     print "No return above", cut2, "angströms after going below", cut1, "angströms"
 else:
   print "No bond formation"
+
+if (sys.argv[-1]=="dist"):
+  with open(sys.argv[1]+".ctimes","w") as fout:
+    for i in range(len(trans1_times)):
+      fout.write('%d %f\n' %(i, trans1_times[i]))
+  with open(sys.argv[1]+".ftimes","w") as fout:
+    for i in range(len(trans2_times)):
+      fout.write('%d %f\n' %(i, trans2_times[i]))
 
 
 print "############################################################\n\n"
