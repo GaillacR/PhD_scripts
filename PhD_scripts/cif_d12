@@ -73,7 +73,7 @@ with open(cifname,"r") as cif:
       if (len(info)>3):
         if (info[0] in Elements or info[1] in Elements):
           try:
-            d12.write(str(Elements.index(info[0])+1)+" "+str(float(info[2]))+" "+str(float(info[3]))+" "+str(float(info[4]))+"\n")
+            d12.write(str(Elements.index(info[1])+1)+" "+str(float(info[2]))+" "+str(float(info[3]))+" "+str(float(info[4]))+"\n")
           except (TypeError, IndexError) as e:
             d12.write(str(Elements.index(info[0])+1)+" "+str(float(info[1]))+" "+str(float(info[2]))+" "+str(float(info[3]))+"\n")
     d12.write("ELASTCON\nMAXCYCLE\n1000\nPREOPTGEOM\nEND\nBASISSET\nPOB-TZVP\nDFT\nPBESOLXC\nENDDFT\nFMIXING\n40\nLEVSHIFT\n5 0\nTOLINTEG\n7 7 7 7 14\nTOLDEE\n8\nGRIMME\n0.75 20. 25.\n2\n14 9.23 1.716\n8 0.70 1.342\n")
