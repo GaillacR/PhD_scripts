@@ -2,4 +2,44 @@
 
 import numpy as np
 import ReadWrite as rw
+import PBC_RG as pbc
 import sys
+
+
+Atfact={"H": 1.00000, "C": 6.00054, "N": 7.00100, "O": 8.00166, "Zn": 30.1630}
+partialPDF = rw.readFromColfile(sys.argv[1],header=1)[1:-2]
+cples={}
+
+f = open(sys.argv[1],"r")
+header = f.readline()
+for i in range(2,len(header.split())):
+  cples[i-2] = header.split()[i]
+
+cell_f = sys.argv[3]
+[Cell, Cell.C] = rw.readCell(cell_f)
+a = Cell.a
+b = Cell.b
+c = Cell.c
+print Cell.a,Cell.b,Cell.c
+Vol = a*b*c*(1- np.cos(Cell.alpha)**2- np.cos(Cell.beta)**2- np.cos(Cell.gamma)**2) + 2*np.sqrt(np.cos(Cell.alpha)*np.cos(Cell.beta)*np.cos(Cell.gamma))
+
+refPos = rw.readFromXYZFile(sys.argv[2]+".xyz",1,1,2)[0]
+Atoms_Numb = len(refPos)
+Used_elements = pbc.get_elements(refPos)
+N = len(Used_elements)
+Mass = Atoms_Numb
+coeff = {}
+for e in range(N):
+  coeff[Used_elements[e]] = 0
+
+for b in range(Atoms_Numb):
+  for at in range(Atoms_Numb):
+    coord2 = pbc.get_coord(refPos[at])
+    coeff[refPos[at].elt] = coeff[refPos[at].elt] + 1
+rho0 = float(Mass)/float(Vol)
+for key in coeff:
+  coeff[key] = float(coeff[key])/float(Mass*Atoms_Numb)
+
+print coeff
+
+
