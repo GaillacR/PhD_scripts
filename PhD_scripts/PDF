@@ -35,7 +35,7 @@ def main(argv):
   tmp_name = tmp_name[len(tmp_name)-1]
   gr_name ="PDF_"+gr_option+tmp_name+str(first_step)
 
-  dr=0.01
+  dr=0.05
   #rmax=math.sqrt(a**2+b**2+c**2)/2
   rmax=min([a/2,b/2,c/2])
   irmax=int((rmax/dr)-1)

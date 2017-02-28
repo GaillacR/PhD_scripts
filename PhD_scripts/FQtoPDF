@@ -1,0 +1,29 @@
+#!/usr/bin/env python
+
+import numpy as np
+import ReadWrite as rw
+import sys
+
+
+grs = rw.readFromColfile(sys.argv[1],header=1)
+
+grtot = grs[17]
+r = grs[0]
+dr = r[1]-r[0]
+
+#FQ = np.fft.fft(grtot,n=len(grtot))
+#freq = np.fft.fftfreq(len(grtot), d=dr)
+
+#for i in range(len(FQ)):
+#  print freq[i], np.real(FQ[i]), np.imag(FQ[i])
+
+freq = np.linspace(0.3,20,10000)
+FQ = [0.0 for x in range(len(freq))]
+
+for i in range(len(FQ)):
+  FQ[i] = ((grtot[0]+grtot[1])/2)*dr*np.sin(freq[i]*((r[0]+r[1])/2))/freq[i]
+  for j in range(1,len(grtot)-1):
+    FQ[i] = FQ[i] + ((grtot[j]+grtot[j+1])/2)*dr*np.sin(freq[i]*((r[j]+r[j+1])/2))/freq[i]
+
+for i in range(len(FQ)):
+  print freq[i], FQ[i]
