@@ -2,28 +2,50 @@
 
 import numpy as np
 import ReadWrite as rw
+import PBC_RG as pbc
 import sys
+from scipy.signal import savgol_filter
 
+cell_f = sys.argv[3]
+[Cell, Cell.C] = rw.readCell(cell_f)
+a = Cell.a
+b = Cell.b
+c = Cell.c
+Vol = a*b*c*(1- np.cos(Cell.alpha)**2- np.cos(Cell.beta)**2- np.cos(Cell.gamma)**2) + 2*np.sqrt(np.cos(Cell.alpha)*np.cos(Cell.beta)*np.cos(Cell.gamma))
 
-grs = rw.readFromColfile(sys.argv[1],header=1)
+refPos = rw.readFromXYZFile(sys.argv[2]+".xyz",1,1,2)[0]
+Atoms_Numb = len(refPos)
+Used_elements = pbc.get_elements(refPos)
+N = len(Used_elements)
+Mass = Atoms_Numb
+coeff = {}
+for e in range(N):
+  coeff[Used_elements[e]] = 0
 
-grtot = grs[17]
-r = grs[0]
-dr = r[1]-r[0]
+for b in range(Atoms_Numb):
+  for at in range(Atoms_Numb):
+    coord2 = pbc.get_coord(refPos[at])
+    coeff[refPos[at].elt] = coeff[refPos[at].elt] + 1
+rho0 = float(Mass)/float(Vol)
+for key in coeff:
+  coeff[key] = float(coeff[key])/float(Mass*Atoms_Numb)
 
-#FQ = np.fft.fft(grtot,n=len(grtot))
-#freq = np.fft.fftfreq(len(grtot), d=dr)
+FQs = rw.readFromColfile(sys.argv[1],header=1)
 
-#for i in range(len(FQ)):
-#  print freq[i], np.real(FQ[i]), np.imag(FQ[i])
+FQtot = FQs[17]
+Q = FQs[0]
+dQ = Q[1]-Q[0]
 
-freq = np.linspace(0.3,20,10000)
-FQ = [0.0 for x in range(len(freq))]
+rad = np.linspace(0.01,20,2000)
+PDF = [0.0 for x in range(len(rad))]
 
-for i in range(len(FQ)):
-  FQ[i] = ((grtot[0]+grtot[1])/2)*dr*np.sin(freq[i]*((r[0]+r[1])/2))/freq[i]
-  for j in range(1,len(grtot)-1):
-    FQ[i] = FQ[i] + ((grtot[j]+grtot[j+1])/2)*dr*np.sin(freq[i]*((r[j]+r[j+1])/2))/freq[i]
+for i in range(len(PDF)):
+  PDF[i] = ((FQtot[0]+FQtot[1])/2)*((Q[0]+Q[1])/2)*dQ*np.sin(rad[i]*((Q[0]+Q[1])/(2)))/rad[i]
+  for j in range(1,len(FQtot)-1):
+    PDF[i] = PDF[i] + ((FQtot[j]+FQtot[j+1])/2)*((Q[j]+Q[j+1])/2)*dQ*np.sin(rad[i]*((Q[j]+Q[j+1])/(2)))/rad[i]
+  PDF[i] = 4*np.pi*PDF[i]/((2*np.pi)**3*rho0)
 
-for i in range(len(FQ)):
-  print freq[i], FQ[i]
+PDF_filt = savgol_filter(PDF,79,2)
+
+for i in range(len(PDF)):
+  print rad[i], PDF[i], PDF_filt[i]
