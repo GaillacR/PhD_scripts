@@ -1,4 +1,4 @@
-Here are some of the scripts I use during my PhD.
+Here are some of the scripts I use during my PhD. Most of them are written in Python 2.7 and non numerically optimized.
 
 Among other things, there are PDF calculations, statistical analyses of coordination networks in ZIFs, conversion scripts for CRYSTAL14, scripts that clean the output of CP2K (xyz, frc, vel, ener)
 
