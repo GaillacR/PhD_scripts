@@ -14,7 +14,9 @@ Among other things, there are PDF calculations, statistical analyses of coordina
 
 - PDF : Computing pair distribution functions with atomic factors at 59 Kev --> to compare with X-ray experiments (see http://scripts.iucr.org/cgi-bin/paper?th0051)
 
-- PDFtoFQ : Convert PDF to a F(Q) (see http://scripts.iucr.org/cgi-bin/paper?th0051)
+- PDFtoFQ : Convert partial PDFs to partial Fi(Q) and total F(Q) (see http://scripts.iucr.org/cgi-bin/paper?th0051)
+
+- FQtoPDF : Convert total F(Q) to PDF (see http://scripts.iucr.org/cgi-bin/paper?th0051)
 
 - PMF : Computing pair correlation function (g(r)) ; PMF stands for potential of mean force given by -kTlog(g(r))
 
@@ -65,3 +67,7 @@ Among other things, there are PDF calculations, statistical analyses of coordina
 - timing_stats : cleavage frequencies...
 
 - wtimes : waiting times before succesful exchange distribution
+
+- Cart2Red : converts from cartesian coordinates to reduced coordinates
+
+- Delta_pos : Generalized Lindemann ratio calculation (sort of global RMSD) (see http://aip.scitation.org/doi/10.1063/1.2737054) 
