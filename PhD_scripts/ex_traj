@@ -12,6 +12,22 @@ from mpl_toolkits.mplot3d import Axes3D
 rc('text', usetex=True)
 import ReadWrite as rw
 
+# Coordination number function
+def Cn_func(x,c,x1,x2):
+  def f(x,c,alpha):
+    return (1-np.tanh(alpha*(x-c)))/2
+  alpha = 1
+  while (f(x1,c,alpha)<0.9999 and f(x2,c,alpha)>0.0001):
+    alpha=alpha*2
+  return f(x,c,alpha)
+
+x1 = 2.0
+x2 = 4.2
+c = 3.1
+for i in range(2000):
+  print (i*0.001+1.5), Cn_func((i*0.001+1.5),c,x1,x2)
+exit(0)
+
 # Find out how many configurations are stored
 nconf = rw.nconfFromDist(sys.argv[1]+".dist")
 print "#### Simulation", sys.argv[1].split("/")[-1], "####"
