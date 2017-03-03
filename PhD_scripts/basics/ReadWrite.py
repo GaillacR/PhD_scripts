@@ -86,7 +86,7 @@ def readFromDistanceFile(filename, nconf):
       for at in range(nconf):
         [t, d] = f.readline().split()
         snap.append(float(d))
-  return traj
+  return np.array(traj)
 
 def nconfFromDist(filename):
   foo = 0

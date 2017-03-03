@@ -70,6 +70,7 @@ Cnumbers={}
 cutoff = float(sys.argv[-1])
 x1 = float(sys.argv[-3])
 x2 = float(sys.argv[-2])
+nconf = nconf/10
 for key in nitropairs:
   Cnumbers[key] = [0.0 for x in range(nconf)]
   i = key
