@@ -12,6 +12,17 @@ from mpl_toolkits.mplot3d import Axes3D
 rc('text', usetex=True)
 import ReadWrite as rw
 
+# Coordination number function
+def Cn_Zn(dist,c,x1,x2):
+  def Cn_func(x,c,x1,x2):
+    def f(x,c,a):
+      return (1-np.tanh(a*(x-c)))/2
+    alpha = 1
+    while (f(x1,c,alpha)<0.999 and f(x2,c,alpha)>0.001):
+      alpha=alpha*2
+    return f(x,c,alpha)
+  return sum([Cn_func(dist[i],c,x1,x2) for i in range(5)])
+
 # Find out how many configurations are stored
 nconf = rw.nconfFromDist(sys.argv[1]+".dist")
 print "#### Simulation", sys.argv[1].split("/")[-1], "####"
@@ -64,6 +75,8 @@ tmp2 = 200
 nitro_active={}
 Cnumbers={}
 cutoff = float(sys.argv[-1])
+x1 = float(sys.argv[-3])
+x2 = float(sys.argv[-2])
 for key in nitropairs:
   Cnumbers[key] = [0.0 for x in range(nconf)]
   i = key
@@ -83,35 +96,13 @@ for key in nitropairs:
       d = trajDist[nitropairs[i][n][0]][time]
       distances[n] = d
     sortdist = sorted(distances)
-    if (sortdist[4]<=cutoff):
-      Cnumbers[i][time]=5.0
-    elif (sortdist[4]>cutoff and sortdist[3]<=cutoff):
-      Cnumbers[i][time]=4.0
-    elif (sortdist[3]>cutoff and sortdist[2]<=cutoff):
-      Cnumbers[i][time]=3.0
-    elif (sortdist[2]>cutoff and sortdist[1]<=cutoff):
-      Cnumbers[i][time]=2.0
-    elif (sortdist[1]>cutoff and sortdist[0]<=cutoff):
-      Cnumbers[i][time]=1.0
-    elif (sortdist[0]>cutoff):
-      Cnumbers[i][time]=0.0
+    Cnumbers[i][time] = Cn_Zn(sortdist,cutoff,x1,x2)
   for time in range(1+23*nconf/25,nconf):
     for n in rnitropairs:
       d = trajDist[nitropairs[i][n][0]][time]
       distances[n] = d
     sortdist = sorted(distances)
-    if (sortdist[4]<=cutoff):
-      Cnumbers[i][time]=5.0
-    elif (sortdist[4]>cutoff and sortdist[3]<=cutoff):
-      Cnumbers[i][time]=4.0
-    elif (sortdist[3]>cutoff and sortdist[2]<=cutoff):
-      Cnumbers[i][time]=3.0
-    elif (sortdist[2]>cutoff and sortdist[1]<=cutoff):
-      Cnumbers[i][time]=2.0
-    elif (sortdist[1]>cutoff and sortdist[0]<=cutoff):
-      Cnumbers[i][time]=1.0
-    elif (sortdist[0]>cutoff):
-      Cnumbers[i][time]=0.0
+    Cnumbers[i][time] = Cn_Zn(sortdist,cutoff,x1,x2)
   for time in range(nconf/25,1+23*nconf/25):
     for n in rnitropairs:
       d = trajDist[nitropairs[i][n][0]][time]
@@ -119,18 +110,7 @@ for key in nitropairs:
       d40 = trajDist[nitropairs[i][n][0]][time+50]
       distances40[n] = d40
     sortdist = sorted(distances)
-    if (sortdist[4]<=cutoff):
-      Cnumbers[i][time]=5.0
-    elif (sortdist[4]>cutoff and sortdist[3]<=cutoff):
-      Cnumbers[i][time]=4.0
-    elif (sortdist[3]>cutoff and sortdist[2]<=cutoff):
-      Cnumbers[i][time]=3.0
-    elif (sortdist[2]>cutoff and sortdist[1]<=cutoff):
-      Cnumbers[i][time]=2.0
-    elif (sortdist[1]>cutoff and sortdist[0]<=cutoff):
-      Cnumbers[i][time]=1.0
-    elif (sortdist[0]>cutoff):
-      Cnumbers[i][time]=0.0
+    Cnumbers[i][time] = Cn_Zn(sortdist,cutoff,x1,x2)
     if (sortdist[0]<=cutoff and distances40[distances.index(sortdist[0])]<=cutoff):
       if (coord_index == -10):
         coord_index = distances.index(sortdist[0])
