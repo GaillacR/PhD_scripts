@@ -3,16 +3,9 @@
 
 import math, sys
 import numpy as np
-from matplotlib.colors import LogNorm
-import matplotlib.pyplot as plt
-from pylab import *
-from matplotlib.backends.backend_pdf import PdfPages
-from matplotlib import rc
-from mpl_toolkits.mplot3d import Axes3D
-rc('text', usetex=True)
 import ReadWrite as rw
 
-# Coordination number function
+# Smooth coordination number function
 def Cn_Zn(dist,c,x1,x2):
   def Cn_func(x,c,x1,x2):
     def f(x,c,a):
@@ -230,7 +223,6 @@ for i in nitropairs:
     uglob = uglob + len(delays)
 
 offset=50
-#print nitro_active
 print "Number of exchange trajectories averaged:", uglob
 print "Maximum time before t0", mindelay*5, "fs"
 print "Maximum time after t0", (nconf-maxdelay)*5, "fs"
@@ -243,10 +235,7 @@ sigma2 = [0.0 for x in range(mindelay+nconf-maxdelay)]
 median2 = [0.0 for x in range(mindelay+nconf-maxdelay)]
 Cn_tot = [0.0 for x in range(mindelay+nconf-maxdelay)]
 Cn_med = [0.0 for x in range(mindelay+nconf-maxdelay)]
-#resfile = open("foo.res","w")
-#with open("foo.out","w") as outfile:
 for k in range(nconf-mindelay,2*nconf-maxdelay):
-#    outfile.write(str(k-nconf)+" "+str(d1[0][k])+" "+str(d2[0][k])+" "+str(d1[1][k])+" "+str(d2[1][k])+" "+str(d1[2][k])+" "+str(d2[2][k])+" "+str(d1[3][k])+" "+str(d2[3][k])+"\n")
   k2 = k - nconf + mindelay
   for d in range(ndist):
     d1_tot[k2] = d1_tot[k2] + d1[d][k]/ndist
@@ -268,9 +257,6 @@ for k in range(nconf-mindelay,2*nconf-maxdelay):
     median1[k2] = float(dist1[1+ndist/2])
     median2[k2] = float(dist2[1+ndist/2])
     Cn_med[k2] = float(SCn[1+ndist/2])
-#    resfile.write(str(float((k-nconf)*5)/1000.0)+" "+str(Cn_tot[k2])+" "+str(d1_tot[k2])+" "+str(d2_tot[k2])+" "+str(d1_tot[k2]-sigma1[k2])+" "+str(d2_tot[k2]-sigma2[k2])+" "+str(d1_tot[k2]+sigma1[k2])+" "+str(d2_tot[k2]+sigma2[k2])+"\n")
-
-#resfile.close()
 
 with open(sys.argv[1]+".avgtraj","w") as fout:
   for k in range(nconf-mindelay,2*nconf-maxdelay):
@@ -300,110 +286,5 @@ with open((sys.argv[1].split("/"))[-1]+".alldist","w") as fout:
     for k in range(nconf-mindelay,2*nconf-maxdelay):
       fout.write(str(time[count])+" "+str(d1_all[count])+" "+str(d2_all[count])+"\n")
       count=count+1
-
-
-exit(0)
-# plot and fit
-###############################################
-fig=plt.figure(1)
-ax = fig.add_subplot(111)
-fig.suptitle('Average exchange trajectories')
-ax.set_xlabel('Time (fs)')
-ax.set_ylabel('Distance ($\mathring{A}$)')
-my_cmap=matplotlib.cm.get_cmap('cool')
-
-#nbins = sqrt(float(len(d1_all)))/5
-nbins = 200
-#plt.hist2d(time, d1_all, bins=[(float(mindelay+nconf-maxdelay))/4,nbins], range=[[min(time),max(time)],[min(d1_all),7]], cmap=my_cmap, cmin=4)
-ax.hist2d(time, d1_all, bins=[100,nbins], range=[[-1000,1000],[1.3,6]], cmap=my_cmap, cmin=float(ndist)/10.0)
-my_cmap2=matplotlib.cm.get_cmap('hot')
-#plt.hist2d(time, d2_all, bins=[(float(mindelay+nconf-maxdelay))/4,nbins], range=[[min(time),max(time)],[min(d2_all),7]], cmap=my_cmap, cmin=4)
-ax.hist2d(time, d2_all, bins=[100,nbins], range=[[-1000,1000],[1.3,6]], cmap=my_cmap2, cmin=float(ndist)/10.0)
-
-ax.plot([time[i] for i in range(mindelay+nconf-maxdelay)],d1_tot,label="Average bond cleavage trajectory",linewidth=3.0,color='b')
-ax.plot([time[i] for i in range(mindelay+nconf-maxdelay)],median1,label="Median bond cleavage trajectory",linewidth=3.0,color='DarkBlue')
-ax.plot([time[i] for i in range(mindelay+nconf-maxdelay)],d2_tot,label="Average bond formation trajectory",linewidth=3.0,color='r')
-ax.plot([time[i] for i in range(mindelay+nconf-maxdelay)],median2,label="Median bond formation trajectory",linewidth=3.0,color='brown')
-#ax.plot([time[i] for i in range(mindelay+nconf-maxdelay)],[Cn_tot[i]-1e5 for i in range(len(Cn_tot))],label="Average coordination number",linewidth=2.0,color='g')
-#ax.plot([time[i] for i in range(mindelay+nconf-maxdelay)],[Cn_med[i]-1e5 for i in range(len(Cn_med))],label="Average coordination number",linewidth=2.0,color='DarkGreen')
-
-ax2 = ax.twinx()
-ax2.plot([time[i] for i in range(mindelay+nconf-maxdelay)],Cn_tot,label="Average coordination number",linewidth=2.0,color='g')
-#ax2.plot([time[i] for i in range(mindelay+nconf-maxdelay)],Cn_med,label="Median coordination number",linewidth=2.0,color='DarkGreen')
-ax2.set_ylabel('Coordination number')
-ax2.set_xlim(-1000,1000)
-ax2.set_ylim(2,4)
-ax.set_xlim(-1000,1000)
-
-#plt.legend(bbox_to_anchor=(0.90, 0.6), bbox_transform=plt.gcf().transFigure, fontsize=10)
-ax.legend(loc=1, bbox_transform=plt.gcf().transFigure, fontsize=7)
-ax2.legend(loc=2, bbox_transform=plt.gcf().transFigure, fontsize=7)
-#plt.colorbar()
-plt.savefig((sys.argv[1].split("/"))[-1]+'_dist2.png', dpi=600)
-################################################
-
-# plot and fit
-###############################################
-fig=plt.figure(2)
-ax = fig.add_subplot(111,projection='3d')
-fig.suptitle('Average coordination number during exchange')
-ax.set_xlabel('Time (fs)')
-ax.set_ylabel('Coordination number')
-#my_cmap=matplotlib.cm.get_cmap('cool')
-
-#ax.xaxis.set_major_formatter(FormatStrFormatter('%d'))
-
-#nbins = sqrt(float(len(d1_all)))/5
-nbins = 6
-nbins2 = 100
-tmax=1000
-H,xedges,yedges=np.histogram2d(time, Cn_all, bins=[nbins2,nbins], range=[[-tmax,tmax],[0,6]])
-hist=np.array(list(H))
-xe=np.array(list(xedges))
-ye=np.array(list(yedges))
-
-x = np.array([(xe[i]+xe[i+1])/2.0 for i in range(len(xe)-1)])
-ax.set_xticks(np.arange(int(xe[0]),int(xe[-1]+200),200))
-
-#for j in range(nbins):
-  #y = np.array([yedges[j] for m in range(len(x))])
-  #z = np.array([row[j] for row in np.array(list(H))])
-  #print y
-  #ax.plot(y,x,z)
-
-zmax=40
-for j,c,a in zip(range(nbins),['y','m','c','b','g','r'],[0.5,0.3,0.2,0.2,0.2,1]):
-  z = int(ye[j])
-  y2 = np.array([row[j] for row in hist])
-  y = savgol_filter(y2,5,1)
-  cs = c*len(x)
-  if (j==0):
-    zmax=max(y)
-  elif(j>0 and max(y)>zmax):
-    zmax=max(y)
-  ax.bar(x,y,zs=z,width=int(2.0*tmax/len(x)),zdir='y',color=cs,edgecolor=cs,alpha=a,label=str(z)+" N coordinated")
-
-ax.view_init(elev=16, azim=-63)             # camera elevation and angle
-ax.dist=8
-ax.set_zlim(1,zmax)
-time2=list()
-Cn_tot2=list()
-Cn_med2=list()
-for i in range(mindelay+nconf-maxdelay):
-  if (time[i]>=-1000 and time[i]<=1000):
-    time2.append(time[i])
-    Cn_tot2.append(Cn_tot[i])
-    Cn_med2.append(Cn_med[i])
-plt.plot(time2,Cn_tot2,label="Average",linewidth=2.0)
-plt.plot(time2,Cn_med2,label="Median",linewidth=2.0)
-ax.set_xlim(-1000,1000)
-
-#plt.legend(bbox_to_anchor=(0.90, 0.6), bbox_transform=plt.gcf().transFigure, fontsize=10)
-#plt.colorbar()
-#plt.show()
-plt.savefig((sys.argv[1].split("/"))[-1]+'_CN.png', dpi=600)
-###############################################
-
-
 
 print "############################################################\n\n"
