@@ -106,20 +106,24 @@ for key in nitropairs:
     sortdist = sorted(distances)
     Cnumbers[i][time] = Cn_Zn(sortdist,cutoff,x1,x2)
     if (sortdist[0]<=cutoff and distances40[distances.index(sortdist[0])]<=cutoff):
+      fst_neighb = distances.index(sortdist[0])
+      scd_neighb = distances.index(sortdist[1])
+      thi_neighb = distances.index(sortdist[2])
+      fou_neighb = distances.index(sortdist[3])
       if (coord_index == -10):
-        coord_index = distances.index(sortdist[0])
-        second_index = distances.index(sortdist[1])
-        third_index = distances.index(sortdist[2])
-        fourth_index = distances.index(sortdist[3])
+        coord_index = fst_neighb
+        second_index = scd_neighb
+        third_index = thi_neighb
+        fourth_index = fou_neighb
         nitro_active[i] = [[coord_index, time, nitropairs[i][coord_index][0]]]
-      elif ((distances.index(sortdist[0]) not in tmplist) or (distances.index(sortdist[1]) not in tmplist) or (distances.index(sortdist[2]) not in tmplist) or (distances.index(sortdist[3])) not in tmplist and (distances[nitro_active[i][-1][0]] > 0.5+cutoff) and (distances40[nitro_active[i][-1][0]] > 0.5+cutoff)):
-        coord_index = distances.index(sortdist[0])
-        if (sortdist[1]<=cutoff and distances40[distances.index(sortdist[1])]<=cutoff):
-          second_index = distances.index(sortdist[1])
-          if (sortdist[2]<=cutoff and distances40[distances.index(sortdist[2])]<=cutoff):
-            third_index = distances.index(sortdist[2])
-            if (sortdist[3]<=cutoff and distances40[distances.index(sortdist[3])]<=cutoff):
-              fourth_index = distances.index(sortdist[3])
+      elif ((fst_neighb not in tmplist) or (scd_neighb not in tmplist) or (thi_neighb not in tmplist) or (fou_neighb not in tmplist) and (distances[nitro_active[i][-1][0]] > 0.5+cutoff) and (distances40[nitro_active[i][-1][0]] > 0.5+cutoff)):
+        coord_index = fst_neighb
+        if (sortdist[1]<=cutoff and distances40[scd_neighb]<=cutoff):
+          second_index = scd_neighb
+          if (sortdist[2]<=cutoff and distances40[thi_neighb]<=cutoff):
+            third_index = thi_neighb
+            if (sortdist[3]<=cutoff and distances40[fou_neighb]<=cutoff):
+              fourth_index = fou_neighb
             else:
               fourth_index = third_index
           else:
