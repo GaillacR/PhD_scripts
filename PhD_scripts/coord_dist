@@ -80,6 +80,11 @@ for time in range(nconf):
 print "Simulated time:", 5*nconf, "fs"
 print "Nitrogen coordination number (with Zn):", float(sum(NcN))/float(len(NcN))
 print "Zinc coordination number (with N):",float(sum(NcZn))/float(len(NcZn))
+print "Parameters used for coordination number calculation:"
+print "C(d(Zn-N)) is 1 for x <", x1
+print "C(d(Zn-N)) is 0 for x >", x2
+print "C(d(Zn-N)) is 0.5 for x =", cutoff
+print float(sum(NcZn))/float(len(NcZn))
 
 suffix=""
 if (sys.argv[-1]=="nofile"):
