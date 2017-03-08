@@ -14,3 +14,4 @@ crystal.sh
 energies_rescale
 *test*
 ghi
+*.pyc
