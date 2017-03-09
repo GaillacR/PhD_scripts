@@ -42,7 +42,7 @@ rho0 = float(Mass)/float(Vol)
 for key in coeff:
   coeff[key] = float(coeff[key])/float(Mass*Atoms_Numb)
 
-freq = np.linspace(0,120,12000)
+freq = np.linspace(0,20,2000)
 Aij = [[0.0 for x in range(len(freq))] for y in range(len(cples))]
 
 for c in range(len(cples)):
