@@ -22,8 +22,7 @@ print "#### Simulation", sys.argv[1].split("/")[-1], "####"
 print "Reading ", nconf, "configurations"
 
 # Read the distances in
-trajDist = rw.readFromDistanceFile2(sys.argv[1] + ".dist", nconf)
-exit(0)
+trajDist = rw.readFromDistanceFile(sys.argv[1] + ".dist", nconf)
 
 # Read the correspondence between pairs and atoms in Pairs.dat
 pairs = {} # dict with [Atom1(N), Atom2(Zn)] at key pair 1-2
@@ -42,6 +41,10 @@ with open(sys.argv[2],"r") as pfile:
     tmp = int(sp[1])
 
 npairs = len(trajDist)
+
+cutoff = float(sys.argv[-1])
+x1 = float(sys.argv[-3])
+x2 = float(sys.argv[-2])
 
 Nitro = {}
 Zinc = {}
@@ -62,34 +65,18 @@ rnitropairs=range(len(nitropairs[origin]))
 
 distances = [0.0 for j in rnitropairs]
 distances40 = [0.0 for j in rnitropairs]
-coord_index = -10
-second_index = -10
-tmp1 = 200
-tmp2 = 200
 nitro_active={}
 Cnumbers={}
-cutoff = float(sys.argv[-1])
-x1 = float(sys.argv[-3])
-x2 = float(sys.argv[-2])
-nconf = nconf/10
+deltat = 30
 for key in nitropairs:
   Cnumbers[key] = [0.0 for x in range(nconf)]
   i = key
-  coord_index = -10
-  second_index = -10
-  third_index = -10
-  fourth_index = -10
-  tmp1 = 2000
-  tmp2 = 2000
-  tmp3 = 2000
-  tmp4 = 2000
+  [coord_index, second_index, third_index, fourth_index] = [-10 for x in range(4)]
+  [tmp1, tmp2, tmp3, tmp4] = [2000 for x in range(4)]
   tmplist = [tmp1,tmp2,tmp3,tmp4]
   for time in range(0,nconf/25):
     for n in rnitropairs:
-      #print i, n, time, len(nitropairs), len(nitropairs[i]), len(trajDist)
-      #print nitropairs[i][n][0]
-      d = trajDist[nitropairs[i][n][0]][time]
-      distances[n] = d
+      distances[n] = trajDist[nitropairs[i][n][0]][time]
     sortdist = sorted(distances)
     Cnumbers[i][time] = Cn_Zn(sortdist,cutoff,x1,x2)
   for time in range(1+23*nconf/25,nconf):
@@ -101,62 +88,60 @@ for key in nitropairs:
   for time in range(nconf/25,1+23*nconf/25):
     for n in rnitropairs:
       distances[n] = trajDist[nitropairs[i][n][0]][time]
-      distances40[n] = [trajDist[nitropairs[i][n][0]][time+dt] for dt in range(30,100,2)]
+      distances40[n] = [trajDist[nitropairs[i][n][0]][time+dt] for dt in range(deltat,deltat+70,2)]
     sortdist = sorted(distances)
     Cnumbers[i][time] = Cn_Zn(sortdist,cutoff,x1,x2)
-    if (sortdist[0]<=cutoff and distances40[distances.index(sortdist[0])]<=cutoff):
+    if (sortdist[0]<=cutoff and any(distances40[distances.index(sortdist[0])])<=cutoff):
       fst_neighb = distances.index(sortdist[0])
       scd_neighb = distances.index(sortdist[1])
       thi_neighb = distances.index(sortdist[2])
       fou_neighb = distances.index(sortdist[3])
       neighbs = [fst_neighb,scd_neighb,thi_neighb,fou_neighb]
-      d_current = distances[nitro_active[i][-1][0]]
-      d40_current = distances40[nitro_active[i][-1][0]]
       if (coord_index == -10):
         coord_index = fst_neighb
         second_index = scd_neighb
         third_index = thi_neighb
         fourth_index = fou_neighb
         nitro_active[i] = [[coord_index, time, nitropairs[i][coord_index][0]]]
-      elif (any(neighbs) not in tmplist and d_current > cutoff and any(d40_current) > x2):
-        coord_index = fst_neighb
-        if (sortdist[1]<=cutoff and any(distances40[scd_neighb])<=cutoff):
-          second_index = scd_neighb
-          if (sortdist[2]<=cutoff and any(distances40[thi_neighb])<=cutoff):
-            third_index = thi_neighb
-            if (sortdist[3]<=cutoff and any(distances40[fou_neighb])<=cutoff):
-              fourth_index = fou_neighb
+      elif (coord_index != 10):
+        d_current = distances[nitro_active[i][-1][0]]
+        d40_current = distances40[nitro_active[i][-1][0]]
+        if (set(neighbs).intersection(tmplist) and d_current > x1 and max(d40_current) > x2):
+          coord_index = fst_neighb
+          if (sortdist[1]<=cutoff and any(distances40[scd_neighb])<=cutoff):
+            second_index = scd_neighb
+            if (sortdist[2]<=cutoff and any(distances40[thi_neighb])<=cutoff):
+              third_index = thi_neighb
+              if (sortdist[3]<=cutoff and any(distances40[fou_neighb])<=cutoff):
+                fourth_index = fou_neighb
+              else:
+                fourth_index = third_index
             else:
-              fourth_index = third_index
+              third_index = second_index
+              fourth_index = second_index
           else:
-            third_index = second_index
-            fourth_index = second_index
-        else:
-          second_index = coord_index
-          third_index = coord_index
-          fourth_index = coord_index
-        indexlist = [nitro_active[i][-1][0]]
-        if (len(nitro_active[i])>1): indexlist.append(nitro_active[i][-2][0])
-        if (len(nitro_active[i])>2): indexlist.append(nitro_active[i][-3][0])
-        if (len(nitro_active[i])>3): indexlist.append(nitro_active[i][-4][0])
-        timelist = nitro_active[i][-1][1]
-        if (coord_index not in indexlist and time>timelist+40):
-          nitro_active[i].append([coord_index, time, nitropairs[i][coord_index][0]])
-        elif (coord_index in indexlist and second_index not in indexlist and time>timelist+40):
-          nitro_active[i].append([second_index, time, nitropairs[i][second_index][0]])
-        elif (coord_index in indexlist and second_index in indexlist and third_index not in indexlist and time>timelist+40):
-          nitro_active[i].append([third_index, time, nitropairs[i][third_index][0]])
-        elif (coord_index in indexlist and second_index in indexlist and third_index in indexlist and fourth_index not in indexlist and time>timelist+40):
-          nitro_active[i].append([fourth_index, time, nitropairs[i][fourth_index][0]])
-      tmp1 = coord_index
-      tmp2 = second_index
-      tmp3 = third_index
-      tmp4 = fourth_index
+            second_index = coord_index
+            third_index = coord_index
+            fourth_index = coord_index
+          indexlist = [nitro_active[i][-1][0]]
+          if (len(nitro_active[i])>1): indexlist.append(nitro_active[i][-2][0])
+          if (len(nitro_active[i])>2): indexlist.append(nitro_active[i][-3][0])
+          if (len(nitro_active[i])>3): indexlist.append(nitro_active[i][-4][0])
+          timelist = nitro_active[i][-1][1]
+          cd_idx = [coord_index, second_index, third_index]
+          if (time > timelist + deltat):
+            if (coord_index not in indexlist):
+              nitro_active[i].append([coord_index, time, nitropairs[i][coord_index][0]])
+            elif (coord_index in indexlist and second_index not in indexlist):
+              nitro_active[i].append([second_index, time, nitropairs[i][second_index][0]])
+            elif (all(cd_idx[0:1]) in indexlist and third_index not in indexlist):
+              nitro_active[i].append([third_index, time, nitropairs[i][third_index][0]])
+            elif (all(cd_idx) in indexlist and fourth_index not in indexlist):
+              nitro_active[i].append([fourth_index, time, nitropairs[i][fourth_index][0]])
+      [tmp1, tmp2, tmp3, tmp4] = [coord_index, second_index, third_index, fourth_index]
       tmplist = [tmp1,tmp2,tmp3,tmp4]
   if (i not in nitro_active):
     nitro_active[i] = [[]]
-
-
 
 Cnumber = [0.0 for i in range(nconf)]
 for i in nitropairs:
@@ -181,41 +166,43 @@ maxdelay = 0.0
 d1 = [[0.0 for x in range(2*nconf)] for y in range(pairs_numb2)]
 d2 = [[0.0 for x in range(2*nconf)] for y in range(pairs_numb2)]
 Cn = [[0.0 for x in range(2*nconf)] for y in range(pairs_numb2)]
-offset=50
-for i in nitropairs:
-#  print "Zinc number", i
-  nuldelay = 0
-  u = 0
-  offset=50
-  if (len(nitro_active[i]) >= 2):
+offset=3*deltat
+nuldelay = 0
+for i in nitropairs:# Loop on the Zinc atoms
+  offset=3*deltat
+  if (len(nitro_active[i]) >= 2): # Checking that there is an exchange around this Zinc
     mindelays = list()
     delays = [int(0) for p in range(len(nitro_active[i])-1)]
     l = 0
     while(l<len(delays)):
       diff = 100
-      n = [nitro_active[i][u+p][0] for p in range(len(nitro_active[i]))]
-      times = [nitro_active[i][u+p][1] for p in range(len(nitro_active[i]))]
+      n = [nitro_active[i][p][0] for p in range(len(nitro_active[i]))]
+      times = [nitro_active[i][p][1] for p in range(len(nitro_active[i]))]
       for k in range(times[l],times[l+1]):
         d = [trajDist[nitropairs[i][z][0]][k] for z in n]
-        dm100 = [trajDist[nitropairs[i][z][0]][k-offset] for z in n]
-        if (k+offset<nconf): d100 = [trajDist[nitropairs[i][z][0]][k+offset] for z in n]
-        if (k+offset>=nconf): d100 = [trajDist[nitropairs[i][z][0]][nconf-1] for z in n]
-        dm = [[trajDist[nitropairs[i][z][0]][x] for x in range(k-offset-10,k-offset)] for z in n]
-        if (k+offset+10<nconf): dp = [[trajDist[nitropairs[i][z][0]][x] for x in range(k+offset,k+offset+10)] for z in n]
-        if (k+offset+10>=nconf): dp = [[trajDist[nitropairs[i][z][0]][x] for x in range(nconf-10,nconf)] for z in n]
-        if (abs(d[l]-d[l+1])<=diff and d100[l]>=d100[l+1] and dm100[l]<=dm100[l+1] and min(dm[l+1])>cutoff+0.55 and max(dm[l])<cutoff+0.45 and max(dp[l+1])<cutoff+0.45 and min(dp[l])>cutoff+0.55):
-          diff = abs(d[l]-d[l+1])
-          delays[l] = int(k)
+        if (k+offset<nconf and k-offset>0):
+          d_after = [[trajDist[nitropairs[i][z][0]][x] for x in range(k, k+offset)] for z in n]
+          d_before = [[trajDist[nitropairs[i][z][0]][x] for x in range(k-offset,k)] for z in n]
+        elif (k+offset>=nconf):
+          d_after = [[trajDist[nitropairs[i][z][0]][x] for x in range(k, nconf-1)] for z in n]
+          d_before = [[trajDist[nitropairs[i][z][0]][x] for x in range(k-offset,k)] for z in n]
+        elif (k+offset<nconf and k-offset<=0):
+          d_after = [[trajDist[nitropairs[i][z][0]][x] for x in range(k, k+offset)] for z in n]
+          d_before = [[trajDist[nitropairs[i][z][0]][x] for x in range(0,k)] for z in n]
+        if (abs(d[l]-d[l+1])<=diff):
+          if (max(d_after[l])>x2):
+            if (min(d_before[l])<x1):
+              if (max(d_before[l+1])>x2):
+                if (min(d_after[l+1])<x1):
+                  diff = abs(d[l]-d[l+1])
+                  delays[l] = int(k)
       if delays[l]==0:
         nuldelay = nuldelay+1
-        #delays[l] = times[l+1]-(nconf/50)
-        #if (delays[l]<(nconf/10)): delays[l]=nconf/50
         delays.remove(delays[l])
         times.remove(times[l+1])
         nitro_active[i].remove(nitro_active[i][l+1])
-        if (offset<80): offset = offset + 10
         l = l - 1
-        #print nuldelay, delays, nitro_active[i]
+        #print "Number of non-resolved delays:", nuldelay
       l = l + 1
     for l in range(len(delays)):
       for k in range(nconf-delays[l],2*nconf-delays[l]):
@@ -228,8 +215,9 @@ for i in nitropairs:
       if(min(delays)<mindelay): mindelay = min(delays)
       if(max(delays)>maxdelay): maxdelay = max(delays)
     uglob = uglob + len(delays)
+    #print uglob
 
-offset=50
+offset=deltat
 print "Number of exchange trajectories averaged:", uglob
 print "Maximum time before t0", mindelay*5, "fs"
 print "Maximum time after t0", (nconf-maxdelay)*5, "fs"
@@ -288,10 +276,11 @@ for d in range(ndist):
 
 
 count=0
-with open((sys.argv[1].split("/"))[-1]+".alldist","w") as fout:
+with open(sys.argv[1]+".alldist","w") as fout:
   for d in range(ndist):
     for k in range(nconf-mindelay,2*nconf-maxdelay):
       fout.write(str(time[count])+" "+str(d1_all[count])+" "+str(d2_all[count])+"\n")
       count=count+1
+    fout.write("\n\n")
 
 print "############################################################\n\n"
