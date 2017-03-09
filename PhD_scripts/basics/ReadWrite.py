@@ -71,7 +71,6 @@ def appendTrajAsXYZFile(filename, traj, first):
                        + " " + str(at.z) + "\n")
   f.close()
 
-
 def readFromDistanceFile(filename, nconf):
   traj = list()
   f = open (filename, "r")
@@ -86,7 +85,8 @@ def readFromDistanceFile(filename, nconf):
       for at in range(nconf):
         [t, d] = f.readline().split()
         snap.append(float(d))
-  return traj
+  return np.array(traj)
+
 
 def nconfFromDist(filename):
   foo = 0
