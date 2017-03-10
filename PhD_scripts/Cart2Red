@@ -1,26 +1,33 @@
 #!/usr/bin/env python
 
-import sys
 import PBC_RG as pbc
-import ReadWrite as rw
+
+def CartPos2Red(Cell,cart_pos):
+  red_pos = cart_pos[:]
+  nat = len(cart_pos[0])
+  nconf = len(cart_pos)
+  for t in range(nconf):
+    for n in range(nat):
+      r1 = cart_pos[t][n]
+      r2 = red_pos[t][n]
+      pbc.cart2red(r1,r2,Cell)
+      red_pos[t][n] = r2
+  return red_pos
 
 
-if len(sys.argv)<3:
-  print "Usage", sys.argv[0], "xyz filename Cell parameter filename"
-  exit(1)
+def main(argv):
+  if len(argv)<3:
+    print "Usage", argv[0], "xyz filename Cell parameter filename"
+    exit(1)
 
-[Cell, Cell.C] = rw.readCell(sys.argv[2])
-cart_pos = rw.readFromXYZFile(sys.argv[1])
-red_pos = cart_pos[:]
+  [Cell, Cell.C] = rw.readCell(argv[2])
+  cart_pos = rw.readFromXYZFile(argv[1])
+  cart_pos2 = [[pbc.get_coord(cart_pos[t][n]) for n in range(len(cart_pos[0]))] for t in range(len(cart_pos))]
+  red_pos2 = CartPos2Red(Cell,cart_pos2)
+  red_pos = [[pbc.make_point(red_pos2[t][n][0],red_pos2[t][n][1],red_pos2[t][n][2],cart_pos[t][n].elt) for n in range(len(cart_pos[0]))] for t in range(len(cart_pos))]
+  rw.writeTrajAsXYZFile(argv[1].split(".xyz")[0]+"_red.xyz",red_pos)
 
-nat = len(cart_pos[0])
-nconf = len(cart_pos)
-
-for t in range(nconf):
-  for n in range(nat):
-    r1 = pbc.get_coord(cart_pos[t][n])
-    r2 = pbc.get_coord(red_pos[t][n])
-    pbc.cart2red(r1,r2,Cell)
-    red_pos[t][n] = pbc.make_point(r2[0],r2[1],r2[2],cart_pos[t][n].elt)
-
-rw.writeTrajAsXYZFile(sys.argv[1].split(".xyz")[0]+"_red.xyz",red_pos)
+if __name__ == "__main__":
+  import sys
+  import ReadWrite as rw
+  main(sys.argv)
