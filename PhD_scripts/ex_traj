@@ -23,6 +23,11 @@ print "Reading ", nconf, "configurations"
 
 # Read the distances in
 trajDist = rw.readFromDistanceFile(sys.argv[1] + ".dist", nconf)
+print len(trajDist[0])
+step = 5
+trajDist = [[trajDist[i][j] for j in range(0,len(trajDist[0]),step)] for i in range(len(trajDist))]
+print len(trajDist), len(trajDist[0])
+nconf = len(trajDist[0])
 
 # Read the correspondence between pairs and atoms in Pairs.dat
 pairs = {} # dict with [Atom1(N), Atom2(Zn)] at key pair 1-2
@@ -67,7 +72,8 @@ distances = [0.0 for j in rnitropairs]
 distances40 = [0.0 for j in rnitropairs]
 nitro_active={}
 Cnumbers={}
-deltat = 30
+deltat = 40/step
+dt2 = 360/step
 for key in nitropairs:
   Cnumbers[key] = [0.0 for x in range(nconf)]
   i = key
@@ -88,10 +94,10 @@ for key in nitropairs:
   for time in range(nconf/25,1+23*nconf/25):
     for n in rnitropairs:
       distances[n] = trajDist[nitropairs[i][n][0]][time]
-      distances40[n] = [trajDist[nitropairs[i][n][0]][time+dt] for dt in range(deltat,deltat+70,2)]
+      distances40[n] = [trajDist[nitropairs[i][n][0]][time+dt] for dt in range(deltat,deltat+dt2,2)]
     sortdist = sorted(distances)
     Cnumbers[i][time] = Cn_Zn(sortdist,cutoff,x1,x2)
-    if (sortdist[0]<=cutoff and any(distances40[distances.index(sortdist[0])])<=cutoff):
+    if (sortdist[0]<=x1 and any(distances40[distances.index(sortdist[0])])<=x1):
       fst_neighb = distances.index(sortdist[0])
       scd_neighb = distances.index(sortdist[1])
       thi_neighb = distances.index(sortdist[2])
@@ -106,13 +112,13 @@ for key in nitropairs:
       elif (coord_index != 10):
         d_current = distances[nitro_active[i][-1][0]]
         d40_current = distances40[nitro_active[i][-1][0]]
-        if (set(neighbs).intersection(tmplist) and d_current > x1 and max(d40_current) > x2):
+        if (set(neighbs).intersection(tmplist) and d_current > cutoff and max(d40_current) > x2):
           coord_index = fst_neighb
-          if (sortdist[1]<=cutoff and any(distances40[scd_neighb])<=cutoff):
+          if (sortdist[1]<=x1 and any(distances40[scd_neighb])<=x1):
             second_index = scd_neighb
-            if (sortdist[2]<=cutoff and any(distances40[thi_neighb])<=cutoff):
+            if (sortdist[2]<=x1 and any(distances40[thi_neighb])<=x1):
               third_index = thi_neighb
-              if (sortdist[3]<=cutoff and any(distances40[fou_neighb])<=cutoff):
+              if (sortdist[3]<=x1 and any(distances40[fou_neighb])<=x1):
                 fourth_index = fou_neighb
               else:
                 fourth_index = third_index
@@ -143,13 +149,15 @@ for key in nitropairs:
   if (i not in nitro_active):
     nitro_active[i] = [[]]
 
+print nitro_active
+
 Cnumber = [0.0 for i in range(nconf)]
 for i in nitropairs:
   for t in range(nconf):
     Cnumber[t]=Cnumber[t]+Cnumbers[i][t]/len(nitropairs)
 with open(sys.argv[1]+".CN","w") as fout:
   for k in range(nconf):
-    fout.write(str(k*5)+" "+str(Cnumber[k])+" "+str(Cnumbers[i][k])+"\n")
+    fout.write(str(k*5*step)+" "+str(Cnumber[k])+" "+str(Cnumbers[i][k])+"\n")
 
 pairs_numb = 0
 pairs_numb2 = 0
@@ -160,16 +168,18 @@ for i in nitropairs:
   elif (len(nitro_active[i])<=1):
     pairs_numb = pairs_numb + len(nitro_active[i])
 
+print pairs_numb2
+
 uglob = 0
 mindelay = 1e15
 maxdelay = 0.0
 d1 = [[0.0 for x in range(2*nconf)] for y in range(pairs_numb2)]
 d2 = [[0.0 for x in range(2*nconf)] for y in range(pairs_numb2)]
 Cn = [[0.0 for x in range(2*nconf)] for y in range(pairs_numb2)]
-offset=3*deltat
+offset=deltat+dt2
 nuldelay = 0
 for i in nitropairs:# Loop on the Zinc atoms
-  offset=3*deltat
+  offset=deltat+dt2
   if (len(nitro_active[i]) >= 2): # Checking that there is an exchange around this Zinc
     mindelays = list()
     delays = [int(0) for p in range(len(nitro_active[i])-1)]
@@ -191,9 +201,9 @@ for i in nitropairs:# Loop on the Zinc atoms
           d_before = [[trajDist[nitropairs[i][z][0]][x] for x in range(0,k)] for z in n]
         if (abs(d[l]-d[l+1])<=diff):
           if (max(d_after[l])>x2):
-            if (min(d_before[l])<x1):
+            if (max(d_before[l])<cutoff):
               if (max(d_before[l+1])>x2):
-                if (min(d_after[l+1])<x1):
+                if (max(d_after[l+1])<cutoff):
                   diff = abs(d[l]-d[l+1])
                   delays[l] = int(k)
       if delays[l]==0:
@@ -219,8 +229,8 @@ for i in nitropairs:# Loop on the Zinc atoms
 
 offset=deltat
 print "Number of exchange trajectories averaged:", uglob
-print "Maximum time before t0", mindelay*5, "fs"
-print "Maximum time after t0", (nconf-maxdelay)*5, "fs"
+print "Maximum time before t0", mindelay*5*step, "fs"
+print "Maximum time after t0", (nconf-maxdelay)*5*step, "fs"
 ndist = uglob
 d1_tot = [0.0 for x in range(mindelay+nconf-maxdelay)]
 sigma1 = [0.0 for x in range(mindelay+nconf-maxdelay)]
@@ -256,11 +266,11 @@ for k in range(nconf-mindelay,2*nconf-maxdelay):
 with open(sys.argv[1]+".avgtraj","w") as fout:
   for k in range(nconf-mindelay,2*nconf-maxdelay):
     k2 = k - nconf + mindelay
-    fout.write(str((k-nconf)*5)+" "+str(d1_tot[k2])+" "+str(d2_tot[k2])+" "+str(median1[k2])+" "+str(median2[k2])+" "+str(sigma1[k2])+" "+str(sigma2[k2])+"\n")
+    fout.write(str((k-nconf)*5*step)+" "+str(d1_tot[k2])+" "+str(d2_tot[k2])+" "+str(median1[k2])+" "+str(median2[k2])+" "+str(sigma1[k2])+" "+str(sigma2[k2])+"\n")
 with open(sys.argv[1]+".CNtraj","w") as fout:
   for k in range(nconf-mindelay,2*nconf-maxdelay):
     k2 = k - nconf + mindelay
-    fout.write(str((k-nconf)*5)+" "+str(Cn_tot[k2])+" "+str(Cn_med[k2])+"\n")
+    fout.write(str((k-nconf)*5*step)+" "+str(Cn_tot[k2])+" "+str(Cn_med[k2])+"\n")
 
 d1_all = []
 d2_all = []
@@ -272,7 +282,7 @@ for d in range(ndist):
     d1_all.append(d1[d][k])
     Cn_all.append(Cn[d][k])
     d2_all.append(d2[d][k])
-    time.append((k-nconf)*5)
+    time.append((k-nconf)*5*step)
 
 
 count=0
