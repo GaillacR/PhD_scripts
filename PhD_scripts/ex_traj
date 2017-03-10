@@ -97,7 +97,7 @@ for key in nitropairs:
       distances40[n] = [trajDist[nitropairs[i][n][0]][time+dt] for dt in range(deltat,deltat+dt2,2)]
     sortdist = sorted(distances)
     Cnumbers[i][time] = Cn_Zn(sortdist,cutoff,x1,x2)
-    if (sortdist[0]<=x1 and any(distances40[distances.index(sortdist[0])])<=x1):
+    if (sortdist[0]<=x1 and min(distances40[distances.index(sortdist[0])])<=x1):
       fst_neighb = distances.index(sortdist[0])
       scd_neighb = distances.index(sortdist[1])
       thi_neighb = distances.index(sortdist[2])
@@ -114,11 +114,11 @@ for key in nitropairs:
         d40_current = distances40[nitro_active[i][-1][0]]
         if (set(neighbs).intersection(tmplist) and d_current > cutoff and max(d40_current) > x2 and min(d40_current)>cutoff):
           coord_index = fst_neighb
-          if (sortdist[1]<=x1 and any(distances40[scd_neighb])<=x1):
+          if (sortdist[1]<=x1 and min(distances40[scd_neighb])<=x1):
             second_index = scd_neighb
-            if (sortdist[2]<=x1 and any(distances40[thi_neighb])<=x1):
+            if (sortdist[2]<=x1 and min(distances40[thi_neighb])<=x1):
               third_index = thi_neighb
-              if (sortdist[3]<=x1 and any(distances40[fou_neighb])<=x1):
+              if (sortdist[3]<=x1 and min(distances40[fou_neighb])<=x1):
                 fourth_index = fou_neighb
               else:
                 fourth_index = third_index
@@ -140,9 +140,9 @@ for key in nitropairs:
               nitro_active[i].append([coord_index, time, nitropairs[i][coord_index][0]])
             elif (coord_index in indexlist and second_index not in indexlist):
               nitro_active[i].append([second_index, time, nitropairs[i][second_index][0]])
-            elif (all(cd_idx[0:1]) in indexlist and third_index not in indexlist):
+            elif (cd_idx[0] in indexlist and cd_idx[1] in indexlist and third_index not in indexlist):
               nitro_active[i].append([third_index, time, nitropairs[i][third_index][0]])
-            elif (all(cd_idx) in indexlist and fourth_index not in indexlist):
+            elif (cd_idx[0] in indexlist and cd_idx[1] in indexlist and cd_idx[2] in indexlist and fourth_index not in indexlist):
               nitro_active[i].append([fourth_index, time, nitropairs[i][fourth_index][0]])
       [tmp1, tmp2, tmp3, tmp4] = [coord_index, second_index, third_index, fourth_index]
       tmplist = [tmp1,tmp2,tmp3,tmp4]
