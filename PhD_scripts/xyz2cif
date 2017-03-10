@@ -1,6 +1,15 @@
 #!/usr/bin/env python
 
+import numpy as np
+import sys
+import ReadWrite as rw
 from pymatgen import Lattice, Structure, Molecule
 from pymatgen.io.xyz import XYZ
 
 xyz = Molecule.from_file(sys.argv[1])
+[Cell, Cell.C] = rw.readCell(sys.argv[2])
+lattice = Lattice.from_parameters(a=Cell.a, b=Cell.b, c=Cell.c, alpha=Cell.alpha*180.0/np.pi,beta=Cell.beta*180.0/np.pi, gamma=Cell.gamma*180.0/np.pi)
+
+struct = Structure(lattice,xyz.species,xyz.cart_coords)
+
+struct.to(filename=sys.argv[1].split(".xyz")[0]+".cif")

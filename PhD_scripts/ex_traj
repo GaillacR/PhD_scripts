@@ -112,7 +112,7 @@ for key in nitropairs:
       elif (coord_index != 10):
         d_current = distances[nitro_active[i][-1][0]]
         d40_current = distances40[nitro_active[i][-1][0]]
-        if (set(neighbs).intersection(tmplist) and d_current > cutoff and max(d40_current) > x2):
+        if (set(neighbs).intersection(tmplist) and d_current > cutoff and max(d40_current) > x2 and min(d40_current)>cutoff):
           coord_index = fst_neighb
           if (sortdist[1]<=x1 and any(distances40[scd_neighb])<=x1):
             second_index = scd_neighb
@@ -199,13 +199,13 @@ for i in nitropairs:# Loop on the Zinc atoms
         elif (k+offset<nconf and k-offset<=0):
           d_after = [[trajDist[nitropairs[i][z][0]][x] for x in range(k, k+offset)] for z in n]
           d_before = [[trajDist[nitropairs[i][z][0]][x] for x in range(0,k)] for z in n]
-        if (abs(d[l]-d[l+1])<=diff):
+        if (abs(d[l]-d[l+1])<=diff and d[l+1]>d[l]):
           if (max(d_after[l])>x2):
-            if (max(d_before[l])<cutoff):
-              if (max(d_before[l+1])>x2):
-                if (max(d_after[l+1])<cutoff):
-                  diff = abs(d[l]-d[l+1])
-                  delays[l] = int(k)
+           # if (min(d_before[l])<x1):
+            if (max(d_before[l+1])>x2):
+           #     if (min(d_after[l+1])<x1):
+              diff = abs(d[l]-d[l+1])
+              delays[l] = int(k)
       if delays[l]==0:
         nuldelay = nuldelay+1
         delays.remove(delays[l])
