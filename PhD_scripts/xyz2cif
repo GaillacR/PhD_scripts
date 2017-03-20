@@ -11,13 +11,13 @@ c2r = ModuleType("Cart2Red")
 data = open("/home/gaillac/.local/bin/PhD_scripts/Cart2Red").read()
 exec data in c2r.__dict__
 
-Traj = rw.readFromXYZFile(sys.argv[1],step=1000)
+Traj = rw.readFromXYZFile(sys.argv[1],step=100)
 nconf = len(Traj)
 
 [Cell, Cell.C] = rw.readCell(sys.argv[2])
 lattice = Lattice.from_parameters(a=Cell.a, b=Cell.b, c=Cell.c, alpha=Cell.alpha*180.0/np.pi,beta=Cell.beta*180.0/np.pi, gamma=Cell.gamma*180.0/np.pi)
 for t in range(0,nconf):
-  name = sys.argv[1].split(".xyz")[0]+"_"+str(t*1000)+".xyz"
+  name = sys.argv[1].split(".xyz")[0]+"_"+str(t*100)+".xyz"
   rw.writeTrajAsXYZFile(name,[Traj[t]])
 
   xyz = Molecule.from_file(name)
