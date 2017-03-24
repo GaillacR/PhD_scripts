@@ -140,13 +140,13 @@ for key in nitropairs:
           timelist = nitro_active[i][-1][1]
           cd_idx = [coord_index, second_index, third_index]
           if (time > timelist + deltat):
-            if (coord_index not in indexlist and db[coord_index]>cutoff):
+            if (coord_index not in indexlist and db[coord_index]>x2):
               nitro_active[i].append([coord_index, time, nitropairs[i][coord_index][0]])
-            elif (coord_index in indexlist and second_index not in indexlist and db[second_index]>cutoff):
+            elif (coord_index in indexlist and second_index not in indexlist and db[second_index]>x2):
               nitro_active[i].append([second_index, time, nitropairs[i][second_index][0]])
-            elif (cd_idx[0] in indexlist and cd_idx[1] in indexlist and third_index not in indexlist and db[third_index]>cutoff):
+            elif (cd_idx[0] in indexlist and cd_idx[1] in indexlist and third_index not in indexlist and db[third_index]>x2):
               nitro_active[i].append([third_index, time, nitropairs[i][third_index][0]])
-            elif (cd_idx[0] in indexlist and cd_idx[1] in indexlist and cd_idx[2] in indexlist and fourth_index not in indexlist and db[fourth_index]>cutoff):
+            elif (cd_idx[0] in indexlist and cd_idx[1] in indexlist and cd_idx[2] in indexlist and fourth_index not in indexlist and db[fourth_index]>x2):
               nitro_active[i].append([fourth_index, time, nitropairs[i][fourth_index][0]])
       [tmp1, tmp2, tmp3, tmp4] = [coord_index, second_index, third_index, fourth_index]
       tmplist = [tmp1,tmp2,tmp3,tmp4]
@@ -192,30 +192,17 @@ for i in nitropairs:# Loop on the Zinc atoms
       diff = 100
       n = [nitro_active[i][p][0] for p in range(len(nitro_active[i]))]
       times = [nitro_active[i][p][1] for p in range(len(nitro_active[i]))]
-      delays[l] = (times[l+1])
-#      for k in range(times[l],times[l+1]):
-#        d = [trajDist[nitropairs[i][z][0]][k] for z in n]
-#        if (k+offset<nconf and k-offset>0):
-#          d_after = [[trajDist[nitropairs[i][z][0]][x] for x in range(k+deltat, k+offset)] for z in n]
-#          d_before = [[trajDist[nitropairs[i][z][0]][x] for x in range(k-offset,k-deltat)] for z in n]
-#        elif (k+offset>=nconf):
-#          d_after = [[trajDist[nitropairs[i][z][0]][x] for x in range(k, nconf-1)] for z in n]
-#          d_before = [[trajDist[nitropairs[i][z][0]][x] for x in range(k-offset,k)] for z in n]
-#        elif (k+offset<nconf and k-offset<=0):
-#          d_after = [[trajDist[nitropairs[i][z][0]][x] for x in range(k+deltat, k+offset)] for z in n]
-#          d_before = [[trajDist[nitropairs[i][z][0]][x] for x in range(0,k)] for z in n]
-#        if (d[l+1]<d[l] and abs(d[l]-d[l+1])<diff):
-#          #if (max(d_after[l])>x2 and d[l]>cutoff and max(d_before[l])<cutoff):
-#          #  if (min(d_after[l+1])<x1 and d[l+1]<cutoff and min(d_before[l+1])>cutoff):
-#          diff = abs(d[l]-d[l+1])
-#          delays[l] = int(k)
+      for k in range(times[l],times[l+1]):
+        d = [trajDist[nitropairs[i][z][0]][k] for z in n]
+        if (d[l+1]<d[l] and abs(d[l]-d[l+1])<diff):
+          diff = abs(d[l]-d[l+1])
+          delays[l] = int(k)
       if delays[l]==0:
         nuldelay = nuldelay+1
         delays.remove(delays[l])
         times.remove(times[l+1])
         nitro_active[i].remove(nitro_active[i][l+1])
         l = l - 1
-        #print "Number of non-resolved delays:", nuldelay
       l = l + 1
     for l in range(len(delays)):
       for k in range(nconf-delays[l],2*nconf-delays[l]):
