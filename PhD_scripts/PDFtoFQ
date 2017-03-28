@@ -42,11 +42,11 @@ rho0 = float(Mass)/float(Vol)
 for key in coeff:
   coeff[key] = float(coeff[key])/float(Mass*Atoms_Numb)
 
-freq = np.linspace(0,20,2000)
+freq = np.linspace(0.01,20,2000)
 Aij = [[0.0 for x in range(len(freq))] for y in range(len(cples))]
 
 for c in range(len(cples)):
-  for f in range(1,len(freq)):
+  for f in range(len(freq)):
     sumcb = 0
     for e in range(N):
       sumcb = sumcb + pbc.FormFact(freq[f],Used_elements[e])**2*coeff[Used_elements[e]]
@@ -67,7 +67,7 @@ for c in range(len(cples)):
       Aij[c][f] = 2*(ci*cj*fi*fj/sumcb)*Aij[c][f]
 
 FQ = [0.0 for x in range(len(freq))]
-for f in range(1,len(freq)):
+for f in range(len(freq)):
   for c in range(len(cples)):
     FQ[f] = FQ[f] + Aij[c][f]
 
