@@ -16,3 +16,5 @@ energies_rescale
 ghi
 *.pyc
 *init*.py
+cfiles*
+makehist.py

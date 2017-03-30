@@ -120,7 +120,7 @@ def readCell(filename):
   Cell.C = pbc.make_cell_C(Cell)
   return [Cell, Cell.C]
 
-def readFromColfile(filename,header=0,d=None):
+def readFromColfile(filename,header=0,lim=18,d=None):
   cl = 0
   v = list()
   with open(filename,"r") as fin:
@@ -129,8 +129,8 @@ def readFromColfile(filename,header=0,d=None):
     for line in fin:
       sp = line.split(d)
       if (cl==0):
-        v = [[] for x in range(len(sp))]
-      for p in range(len(sp)):
+        v = [[] for x in range(min(len(sp),lim))]
+      for p in range(len(v)):
         v[p].append(float(sp[p]))
       cl = cl + 1
   return v

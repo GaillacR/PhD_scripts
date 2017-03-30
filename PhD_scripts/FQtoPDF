@@ -36,16 +36,19 @@ FQtot = FQs[17]
 Q = FQs[0]
 dQ = Q[1]-Q[0]
 
-rad = np.linspace(0.01,20,2000)
+rad = np.linspace(0.01,20,1800)
 PDF = [0.0 for x in range(len(rad))]
 
 for i in range(len(PDF)):
+#  PDF[i] = ((FQtot[0]+FQtot[1])/2)*((Q[0]+Q[1])/2)*((Q[0]+Q[1])/2)*dQ*(np.sinc(rad[i]*((Q[0]+Q[1])/(2))/np.pi))
   PDF[i] = ((FQtot[0]+FQtot[1])/2)*((Q[0]+Q[1])/2)*dQ*np.sin(rad[i]*((Q[0]+Q[1])/(2)))/rad[i]
   for j in range(1,len(FQtot)-1):
+#    PDF[i] = PDF[i] + ((FQtot[j]+FQtot[j+1])/2)*((Q[j]+Q[j+1])/2)*((Q[j]+Q[j+1])/2)*dQ*(np.sinc(rad[i]*((Q[j]+Q[j+1])/(2))/np.pi))
     PDF[i] = PDF[i] + ((FQtot[j]+FQtot[j+1])/2)*((Q[j]+Q[j+1])/2)*dQ*np.sin(rad[i]*((Q[j]+Q[j+1])/(2)))/rad[i]
   PDF[i] = 4*np.pi*PDF[i]/((2*np.pi)**3*rho0)
 
 PDF_filt = savgol_filter(PDF,79,2)
+PDF_filt2 = savgol_filter([PDF[i]*4*np.pi*rad[i]*rho0 for i in range(len(PDF))],79,3)
 
 for i in range(len(PDF)):
-  print rad[i], PDF[i], PDF_filt[i]
+  print rad[i], PDF[i], PDF_filt[i], 4*np.pi*rad[i]*rho0, PDF_filt2[i]
