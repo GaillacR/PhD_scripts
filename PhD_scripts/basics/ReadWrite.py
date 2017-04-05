@@ -120,7 +120,7 @@ def readCell(filename):
   Cell.C = pbc.make_cell_C(Cell)
   return [Cell, Cell.C]
 
-def readFromColfile(filename,header=0,lim=18,d=None):
+def readFromColfile(filename,header=0,lim=100,d=None):
   cl = 0
   v = list()
   with open(filename,"r") as fin:
