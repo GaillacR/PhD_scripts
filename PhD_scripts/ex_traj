@@ -154,6 +154,11 @@ for key in nitropairs:
     nitro_active[i] = [[]]
 
 print nitro_active
+#for i in nitropairs:
+#  for j in range(1,len(nitro_active[i])):
+#    print i, nitropairs[i][nitro_active[i][j][0]][1], nitro_active[i][j][1]*10+10000
+#  print ""
+#exit(0)
 
 Cnumber = [0.0 for i in range(nconf)]
 for i in nitropairs:
