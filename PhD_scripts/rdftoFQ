@@ -7,15 +7,13 @@ import sys
 
 
 Atfact={"H": 1.00000, "C": 6.00054, "N": 7.00100, "O": 8.00166, "Zn": 30.1630}
-r = rw.readFromColfile(sys.argv[1],header=1)[0]
+r = rw.readFromColfile(sys.argv[1]+"_CC",header=3)[0]
 dr = r[1]-r[0]
-partialPDF = rw.readFromColfile(sys.argv[1],header=1)[1:-1]
-cples={}
+partialRDF = [rw.readFromColfile(sys.argv[1]+"_CC",header=3,lim=2)[1], rw.readFromColfile(sys.argv[1]+"_CN",header=3,lim=2)[1], rw.readFromColfile(sys.argv[1]+"_HC",header=3,lim=2)[1], rw.readFromColfile(sys.argv[1]+"_HH",header=3,lim=2)[1], rw.readFromColfile(sys.argv[1]+"_HN",header=3,lim=2)[1], rw.readFromColfile(sys.argv[1]+"_NN",header=3,lim=2)[1], rw.readFromColfile(sys.argv[1]+"_ZnC",header=3,lim=2)[1], rw.readFromColfile(sys.argv[1]+"_ZnH",header=3,lim=2)[1], rw.readFromColfile(sys.argv[1]+"_ZnN",header=3,lim=2)[1], rw.readFromColfile(sys.argv[1]+"_ZnZn",header=3,lim=2)[1]]
+cples={0:"C-C", 1:"C-N", 2:"H-C", 3:"H-H", 4:"H-N", 5:"N-N", 6:"Zn-C", 7:"Zn-H", 8:"Zn-N", 9:"Zn-Zn"}
+header = "#  C-C C-N H-C H-H H-N N-N Zn-C Zn-H Zn-N Zn-Zn"
 
-f = open(sys.argv[1],"r")
-header = f.readline()
-for i in range(2,len(header.split())):
-  cples[i-2] = header.split()[i]
+
 
 cell_f = sys.argv[3]
 [Cell, Cell.C] = rw.readCell(cell_f)
@@ -23,7 +21,10 @@ a = Cell.a
 b = Cell.b
 c = Cell.c
 print Cell.a,Cell.b,Cell.c
-Vol = a*b*c*(1- np.cos(Cell.alpha)**2- np.cos(Cell.beta)**2- np.cos(Cell.gamma)**2) + 2*np.sqrt(np.cos(Cell.alpha)*np.cos(Cell.beta)*np.cos(Cell.gamma))
+print np.cos(Cell.alpha)
+print np.cos(Cell.beta)
+print np.cos(Cell.gamma)
+Vol = a*b*c*np.sqrt(2*np.cos(Cell.alpha)*np.cos(Cell.beta)*np.cos(Cell.gamma)+1- np.cos(Cell.alpha)**2- np.cos(Cell.beta)**2- np.cos(Cell.gamma)**2)
 
 refPos = rw.readFromXYZFile(sys.argv[2]+".xyz",1,1,2)[0]
 Atoms_Numb = len(refPos)
@@ -41,6 +42,7 @@ for b in range(Atoms_Numb):
 rho0 = float(Mass)/float(Vol)
 for key in coeff:
   coeff[key] = float(coeff[key])/float(Mass*Atoms_Numb)
+print coeff
 
 freq = np.linspace(0.1,100,8000)
 Aij = [[0.0 for x in range(len(freq))] for y in range(len(cples))]
@@ -54,19 +56,17 @@ for c in range(len(cples)):
     elt2 = cples[c].split("-")[1]
     ci = coeff[elt1]
     cj = coeff[elt2]
-    bi = Atfact[elt1]
-    bj = Atfact[elt2]
     fi = pbc.FormFact(freq[f],elt1)
     fj = pbc.FormFact(freq[f],elt2)
-    Aij[c][f] = ((partialPDF[c][0]+partialPDF[c][1])/2)*(dr/(ci*cj*bi*bj))*np.sin(freq[f]*((r[0]+r[1])/2))/freq[f]
-#    Aij[c][f] = 1 + ((partialPDF[c][0]+partialPDF[c][1])/2)*(dr/(ci*cj*bi*bj))*(np.sinc(freq[f]*((r[0]+r[1])/2)/np.pi))*((r[0]+r[1])/2)
-    for j in range(1,len(partialPDF[c])-1):
-      Aij[c][f] = Aij[c][f] + ((partialPDF[c][j]+partialPDF[c][j+1])/2)*(dr/(ci*cj*bi*bj))*np.sin(freq[f]*((r[j]+r[j+1])/2))/freq[f]
-#      Aij[c][f] = Aij[c][f] + ((partialPDF[c][j]+partialPDF[c][j+1])/2)*(dr/(ci*cj*bi*bj))*(np.sinc(freq[f]*((r[j]+r[j+1])/2)/np.pi))*((r[j]+r[j+1])/2)
+    pre = 4.0*np.pi*rho0*((r[0]+r[1])/2)
+    Aij[c][f] = pre*(((partialRDF[c][0]+partialRDF[c][1])/2)-1)*(dr)*np.sin(freq[f]*((r[0]+r[1])/2))/freq[f]
+    for j in range(1,len(partialRDF[c])-1):
+      pre = 4.0*np.pi*rho0*((r[j]+r[j+1])/2)
+      Aij[c][f] = Aij[c][f] + pre*(((partialRDF[c][j]+partialRDF[c][j+1])/2)-1)*(dr)*np.sin(freq[f]*((r[j]+r[j+1])/2))/freq[f]
     if(elt1==elt2):
       Aij[c][f] = (ci*cj*fi*fj/sumcb)*Aij[c][f]
     else:
-      Aij[c][f] = (ci*cj*fi*fj/sumcb)*Aij[c][f]
+      Aij[c][f] = (2*ci*cj*fi*fj/sumcb)*Aij[c][f]
 
 FQ = [0.0 for x in range(len(freq))]
 for f in range(len(freq)):
@@ -76,7 +76,7 @@ for f in range(len(freq)):
 #print cples
 #print header
 with open(sys.argv[1]+".FQ","w") as fout:
-  fout.write(header)
+  fout.write(header+"\n")
   for f in range(len(freq)):
     fout.write(str(freq[f])+" ")
     for c in range(len(cples)):
