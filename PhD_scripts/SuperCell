@@ -34,8 +34,10 @@ except IOError:
   print "No existing", name
   pass
 
-fstep = first_step+1
+fstep = int(first_step+1)
 first_step = int(first_step*s)
+print first_step
+print s
 
 Intraj = rw.readFromXYZFile(sys.argv[1],step=s,first=first_step)
 

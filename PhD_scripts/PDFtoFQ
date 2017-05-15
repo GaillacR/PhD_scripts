@@ -23,7 +23,7 @@ a = Cell.a
 b = Cell.b
 c = Cell.c
 print Cell.a,Cell.b,Cell.c
-Vol = a*b*c*(1- np.cos(Cell.alpha)**2- np.cos(Cell.beta)**2- np.cos(Cell.gamma)**2) + 2*np.sqrt(np.cos(Cell.alpha)*np.cos(Cell.beta)*np.cos(Cell.gamma))
+Vol = a*b*c*np.sqrt(2*np.cos(Cell.alpha)*np.cos(Cell.beta)*np.cos(Cell.gamma)+1- np.cos(Cell.alpha)**2- np.cos(Cell.beta)**2- np.cos(Cell.gamma)**2)
 
 refPos = rw.readFromXYZFile(sys.argv[2]+".xyz",1,1,2)[0]
 Atoms_Numb = len(refPos)

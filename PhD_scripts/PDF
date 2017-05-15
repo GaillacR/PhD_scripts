@@ -29,7 +29,7 @@ def main(argv):
   b = Cell.b
   c = Cell.c
   print Cell.a,Cell.b,Cell.c
-  Vol = a*b*c*(1- np.cos(Cell.alpha)**2- np.cos(Cell.beta)**2- np.cos(Cell.gamma)**2) + 2*math.sqrt(np.cos(Cell.alpha)*np.cos(Cell.beta)*np.cos(Cell.gamma))
+  Vol = a*b*c*np.sqrt(2*np.cos(Cell.alpha)*np.cos(Cell.beta)*np.cos(Cell.gamma)+1- np.cos(Cell.alpha)**2- np.cos(Cell.beta)**2- np.cos(Cell.gamma)**2)
 
   tmp_name = xyz.split('/')
   tmp_name = tmp_name[len(tmp_name)-1]
