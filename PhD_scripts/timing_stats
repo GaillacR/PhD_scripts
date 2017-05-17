@@ -18,6 +18,7 @@ Isexch = 0
 foo = 0
 cut1 = float(sys.argv[2])
 cut2 = float(sys.argv[3])
+fst = 0
 if (len(sys.argv)>4):
   try:
     fst = int(sys.argv[4])
