@@ -16,11 +16,13 @@ is_tenth = 0
 if (len(sys.argv)>4):
   is_tenth = int(sys.argv[4])
 
+first_step = int(sys.argv[5])
+
 fst = "N"
 scd = "Zn"
-if (len(sys.argv)>6):
-  fst = sys.argv[5]
-  scd = sys.argv[6]
+if (len(sys.argv)>7):
+  fst = sys.argv[6]
+  scd = sys.argv[7]
 
 # Read the cell parameters in
 split = str.split
@@ -28,11 +30,11 @@ cell_f = sys.argv[2]
 [Cell, Cell.C] = rw.readCell(cell_f)
 
 # Read the trajectory in
-# and keep only a tenth of it without the first five picoseconds (dt=0.5fs)
+# and keep only a tenth of it without the first picoseconds (dt=0.5fs)
 if (is_tenth==0):
-  trajPos = rw.readFromXYZFile(sys.argv[1] + ".xyz",10,10001)
+  trajPos = rw.readFromXYZFile(sys.argv[1] + ".xyz",10,first_step)
 elif (is_tenth==1):
-  trajPos = rw.readFromXYZFile(sys.argv[1] + ".xyz",1,1001)
+  trajPos = rw.readFromXYZFile(sys.argv[1] + ".xyz",1,first_step)
 
 if len(trajPos)==0: trajPos = rw.readFromXYZFile(sys.argv[1]+".xyz",1,1)
 

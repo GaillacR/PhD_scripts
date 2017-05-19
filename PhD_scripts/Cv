@@ -37,7 +37,7 @@ split = period*2000 #translation to split
 split2 = period2*2000
 Cvlist=list()
 Ulist=list()
-for k in range(0,len(pot)-split,split2):
+for k in range(0,len(pot)-13*split,split2):
   #print k*split, (k+1)*split
   #print k
   U = [(kin[i]+pot[i]) for i in range(k,k+split)]
@@ -55,9 +55,9 @@ for k in range(0,len(pot)-split,split2):
 
 
   Cv = (4.359744e-18)**2*(U2moy - Umoy**2)/(1.380648e-23*Tmoy**2*M)
-#  print k/2000, "-", (k+split)/2000, "ps" , Tmoy, Cv, Umoy*4.359744e-18/M
+  print k/2000, "-", (k+split)/2000, "ps" , Tmoy, Cv, Umoy*4.359744e-18/M
   Cvlist.append(Cv)
   Ulist.append(Umoy*4.359744e-18/M)
 
 #print "Average Cv = ", np.mean(Cvlist)
-#print "Sigma(U) = ", np.std(Ulist)
+print "Sigma(U) = ", np.std(Ulist)
