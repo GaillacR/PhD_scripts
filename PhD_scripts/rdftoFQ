@@ -5,11 +5,14 @@ import ReadWrite as rw
 import PBC_RG as pbc
 import sys
 
+col = 2
+if (len(sys.argv)==5):
+  col = int(sys.argv[4])-1
 
 Atfact={"H": 1.00000, "C": 6.00054, "N": 7.00100, "O": 8.00166, "Zn": 30.1630}
 r = rw.readFromColfile(sys.argv[1]+"_CC",header=3)[0]
 dr = r[1]-r[0]
-partialRDF = [rw.readFromColfile(sys.argv[1]+"_CC",header=3,lim=2)[1], rw.readFromColfile(sys.argv[1]+"_CN",header=3,lim=2)[1], rw.readFromColfile(sys.argv[1]+"_HC",header=3,lim=2)[1], rw.readFromColfile(sys.argv[1]+"_HH",header=3,lim=2)[1], rw.readFromColfile(sys.argv[1]+"_HN",header=3,lim=2)[1], rw.readFromColfile(sys.argv[1]+"_NN",header=3,lim=2)[1], rw.readFromColfile(sys.argv[1]+"_ZnC",header=3,lim=2)[1], rw.readFromColfile(sys.argv[1]+"_ZnH",header=3,lim=2)[1], rw.readFromColfile(sys.argv[1]+"_ZnN",header=3,lim=2)[1], rw.readFromColfile(sys.argv[1]+"_ZnZn",header=3,lim=2)[1]]
+partialRDF = [rw.readFromColfile(sys.argv[1]+"_CC",header=3,lim=col+1)[col], rw.readFromColfile(sys.argv[1]+"_CN",header=3,lim=col+1)[col], rw.readFromColfile(sys.argv[1]+"_HC",header=3,lim=col+1)[col], rw.readFromColfile(sys.argv[1]+"_HH",header=3,lim=col+1)[col], rw.readFromColfile(sys.argv[1]+"_HN",header=3,lim=col+1)[col], rw.readFromColfile(sys.argv[1]+"_NN",header=3,lim=col+1)[col], rw.readFromColfile(sys.argv[1]+"_ZnC",header=3,lim=col+1)[col], rw.readFromColfile(sys.argv[1]+"_ZnH",header=3,lim=col+1)[col], rw.readFromColfile(sys.argv[1]+"_ZnN",header=3,lim=col+1)[col], rw.readFromColfile(sys.argv[1]+"_ZnZn",header=3,lim=col+1)[col]]
 cples={0:"C-C", 1:"C-N", 2:"H-C", 3:"H-H", 4:"H-N", 5:"N-N", 6:"Zn-C", 7:"Zn-H", 8:"Zn-N", 9:"Zn-Zn"}
 header = "#  C-C C-N H-C H-H H-N N-N Zn-C Zn-H Zn-N Zn-Zn"
 
