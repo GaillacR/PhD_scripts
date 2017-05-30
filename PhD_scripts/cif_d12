@@ -46,7 +46,7 @@ with open(cifname,"r") as cif:
     d12.write(GroupNumb+"\n")
     d12.write(str(a))
     if (b!=a): d12.write(" "+str(b))
-    if (c!=a and c!=b): d12.write(" "+str(c))
+    if (c!=a or c!=b): d12.write(" "+str(c))
     if (alpha!=90.0 or beta!=90.0 or gamma!=90.0):
       if (alpha!=90.0):
         d12.write(" "+str(alpha))
