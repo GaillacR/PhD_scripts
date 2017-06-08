@@ -5,7 +5,7 @@ import ReadWrite as rw
 import PBC_RG as pbc
 import sys
 
-col = 2
+col = 1
 if (len(sys.argv)==5):
   col = int(sys.argv[4])-1
 
