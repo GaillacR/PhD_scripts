@@ -1,0 +1,112 @@
+#!/usr/bin/env python
+
+import sys
+import ReadWrite as rw
+import PBC_RG as pbc
+import numpy as np
+
+s=1
+if (len(sys.argv)==7): s = int(sys.argv[6])
+cell_f = sys.argv[2]
+[Ax, Ay, Az, Bx, By, Bz, Cx, Cy, Cz] = rw.readFromColfile(cell_f,header=1,first=0)[2:11]
+A2 = np.array([Ax,Ay,Az])
+A = np.transpose(A2)
+B2 = np.array([Bx,By,Bz])
+B = np.transpose(B2)
+C2 = np.array([Cx,Cy,Cz])
+C = np.transpose(C2)
+
+
+factor = sys.argv[3]+sys.argv[4]+sys.argv[5]
+name = sys.argv[1].split(".xyz")[-2]+"_"+factor+".xyz"
+print name
+
+first_step = 0.1
+try:
+  print "Looking for existing", name
+  Existtraj = rw.readFromXYZFile(name,step=1000,first=1)
+  print name, "read every 1000"
+  f2 = len(Existtraj)-1
+  Existtraj = rw.readFromXYZFile(name,step=100,first=f2*1000)
+  print name, "read every 100"
+  f3 = len(Existtraj)-1
+  Existtraj = rw.readFromXYZFile(name,step=10,first=f2*1000+f3*100)
+  print name, "read every 10"
+  f4 = len(Existtraj)-1
+  print f2*1000+f3*100+f4*10
+  Existtraj = rw.readFromXYZFile(name,step=1,first=f2*1000+f3*100+f4*10)
+  f5 = len(Existtraj)-1
+  first_step = f2*1000+f3*100+f4*10+f5
+  print f2, f3, f4, f5
+except IOError:
+  print "No existing", name
+  pass
+
+fstep = first_step+1
+first_step = int(first_step*s)
+
+Intraj = rw.readFromXYZFile(sys.argv[1],step=s,first=first_step)
+
+sx = 1
+sy = 1
+sz = 1
+xfactor = int(sys.argv[3])
+yfactor = int(sys.argv[4])
+zfactor = int(sys.argv[5])
+if (xfactor<0): sx=-1
+if (yfactor<0): sy=-1
+if (zfactor<0): sz=-1
+for f in range(len(Intraj)):
+  a = np.linalg.norm(A[f*10+fstep])
+  b = np.linalg.norm(B[f*10+fstep])
+  c = np.linalg.norm(C[f*10+fstep])
+  gamma = np.arccos(np.dot(A[f*10+fstep],B[f*10+fstep])/(a*b))
+  beta = np.arccos(np.dot(A[f*10+fstep],C[f*10+fstep])/(a*c))
+  alpha = np.arccos(np.dot(B[f*10+fstep],C[f*10+fstep])/(b*c))
+  Cell = pbc.make_cell(a, b, c, alpha, beta, gamma)
+  Cell.C = pbc.make_cell_C(Cell)
+  traj = list()
+  mol = Intraj[f]
+  Co = [pbc.get_coord(mol[i]) for i in range(len(mol))]
+  El = [mol[i].elt for i in range(len(mol))]
+
+  fCo = [[0.0 for x in range(3)] for x in range(len(Co))]
+  for k in range(len(Co)):
+    pbc.cart2red(Co[k],fCo[k],Cell)
+
+
+  fCo2 = fCo[:]
+  for k in range(len(fCo)):
+    for x in range(1,xfactor,sx):
+      fCo2.append([fCo[k][0]+x,fCo[k][1],fCo[k][2]])
+      El.append(El[k])
+      for y in range(1,yfactor,sy):
+        fCo2.append([fCo[k][0]+x,fCo[k][1]+y,fCo[k][2]])
+        El.append(El[k])
+        for z in range(1,zfactor,sz):
+          fCo2.append([fCo[k][0]+x,fCo[k][1]+y,fCo[k][2]+z])
+          El.append(El[k])
+    for y in range(1,yfactor,sy):
+      fCo2.append([fCo[k][0],fCo[k][1]+y,fCo[k][2]])
+      El.append(El[k])
+      for z in range(1,zfactor,sz):
+        fCo2.append([fCo[k][0],fCo[k][1]+y,fCo[k][2]+z])
+        El.append(El[k])
+    for z in range(1,zfactor,sz):
+      fCo2.append([fCo[k][0],fCo[k][1],fCo[k][2]+z])
+      El.append(El[k])
+      for x in range(1,xfactor,sx):
+        fCo2.append([fCo[k][0]+x,fCo[k][1],fCo[k][2]+z])
+        El.append(El[k])
+
+
+  Co2 = fCo2[:]
+  for k in range(len(fCo2)):
+    pbc.red2cart(Co2[k],fCo2[k],Cell)
+
+  Co3=[pbc.make_point(Co2[i][0],Co2[i][1],Co2[i][2],str(El[i])) for i in range(len(Co2))]
+  traj.append(Co3)
+
+  rw.appendTrajAsXYZFile(name, traj, f+fstep)
+
+print name, "generated succesfully\n"

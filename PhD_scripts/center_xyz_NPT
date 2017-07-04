@@ -40,7 +40,13 @@ print sys.argv[1], sys.argv[2]
 # Read the cell parameters in
 split = str.split
 cell_f = sys.argv[2]
-[Cell, Cell.C] = rw.readCell(cell_f)
+[Ax, Ay, Az, Bx, By, Bz, Cx, Cy, Cz] = rw.readFromColfile(cell_f,header=1,first=0)[2:11]
+A2 = np.array([Ax,Ay,Az])
+A = np.transpose(A2)
+B2 = np.array([Bx,By,Bz])
+B = np.transpose(B2)
+C2 = np.array([Cx,Cy,Cz])
+C = np.transpose(C2)
 ################################################
 
 step2=-1
@@ -63,12 +69,16 @@ Mass = 0.0
 ratoms=[]
 r3=[0,1,2]
 
+if (sys.argv[1].split(".")[-1]=="gz"):
+  sys.argv[1] = sys.argv[1].replace(".gz","")
+  print sys.argv
+
 try:
   fin = open(sys.argv[1],"r")
 except IOError as e:
   fin = gzip.open(sys.argv[1]+".gz",'rt')
 
-with open((sys.argv[1].split("(?<!.),(?!.)"))[0]+"_center.xyz","w") as fout:
+with open((sys.argv[1].split("."))[0]+"_center."+sys.argv[1].split(".")[1],"w") as fout:
   for line in fin:
     sp = line.split()
     if (cl==0):
@@ -76,7 +86,15 @@ with open((sys.argv[1].split("(?<!.),(?!.)"))[0]+"_center.xyz","w") as fout:
       ratoms = [x for x in range(Numb_Atoms)]
       traj = ["H 0.0 0.0 0.0" for l in ratoms]
       print len(traj)
-    if (cl!=0):
+      a = np.linalg.norm(A[0])
+      b = np.linalg.norm(B[0])
+      c = np.linalg.norm(C[0])
+      gamma = np.arccos(np.dot(A[0],B[0])/(a*b))
+      beta = np.arccos(np.dot(A[0],C[0])/(a*c))
+      alpha = np.arccos(np.dot(B[0],C[0])/(b*c))
+      Cell = pbc.make_cell(a, b, c, alpha, beta, gamma)
+      Cell.C = pbc.make_cell_C(Cell)
+    elif (cl!=0):
       if ("i" in sp and "=" in sp):
         count_tmp = int(sp[2].strip(","))
         count_traj = 0
@@ -84,6 +102,14 @@ with open((sys.argv[1].split("(?<!.),(?!.)"))[0]+"_center.xyz","w") as fout:
         y_G = 0.0
         z_G = 0.0
         traj = ["H 0.0 0.0 0.0" for l in ratoms]
+        a = np.linalg.norm(A[count_tmp])
+        b = np.linalg.norm(B[count_tmp])
+        c = np.linalg.norm(C[count_tmp])
+        gamma = np.arccos(np.dot(A[count_tmp],B[count_tmp])/(a*b))
+        beta = np.arccos(np.dot(A[count_tmp],C[count_tmp])/(a*c))
+        alpha = np.arccos(np.dot(B[count_tmp],C[count_tmp])/(b*c))
+        Cell = pbc.make_cell(a, b, c, alpha, beta, gamma)
+        Cell.C = pbc.make_cell_C(Cell)
         if (count_tmp > count2): count = count_tmp
         if (count > count3):
           fout.write(str(Numb_Atoms)+"\n"+line)
@@ -93,7 +119,7 @@ with open((sys.argv[1].split("(?<!.),(?!.)"))[0]+"_center.xyz","w") as fout:
       else:
         if (cl<=cl_tmp+Numb_Atoms and cl>cl_tmp):
           traj[count_traj] = line
-          ## Centering without wrapping
+          ## Centering
           r_G = [float(sp[1]),float(sp[2]),float(sp[3])]
           #######################
           x_G = x_G + r_G[0]*float(atMasses[sp[0]])
@@ -102,7 +128,7 @@ with open((sys.argv[1].split("(?<!.),(?!.)"))[0]+"_center.xyz","w") as fout:
           if (cl<Numb_Atoms+2): Mass = Mass + float(atMasses[sp[0]])
           count_traj = count_traj + 1
         elif (cl==cl_tmp+Numb_Atoms+1):
-          if (cl<Numb_Atoms+10) : print x_G/Mass, y_G/Mass, z_G/Mass, Mass
+          if (cl<Numb_Atoms+10000) : print x_G/Mass, y_G/Mass, z_G/Mass, Mass
           for l in ratoms:
             if (Mass==0):
               print line
@@ -110,12 +136,20 @@ with open((sys.argv[1].split("(?<!.),(?!.)"))[0]+"_center.xyz","w") as fout:
               exit(1)
             sp = traj[l].split()
             traj2[0] = sp[0]
-            ## Wrapping
+            ## Centering
             r_G = [float(sp[1]),float(sp[2]),float(sp[3])]
             r_G[0] = r_G[0] - x_G/Mass
             r_G[1] = r_G[1] - y_G/Mass
             r_G[2] = r_G[2] - z_G/Mass
             rr_G = [0.0 for z in r3]
+            if (Cell.alpha==90.0 and Cell.beta==90.0 and Cell.gamma==90.0):
+              if (abs(r_G[0])>Cell.a/2 or abs(r_G[1])>Cell.b/2 or abs(r_G[2])>Cell.c/2):
+                print r_G
+                print rr_G
+                print int(round(rr_G[0])), int(round(rr_G[1])), int(round(rr_G[2]))
+                print [Cell.a/2,Cell.b/2,Cell.c/2]
+                exit(1)
+
             #######################
             traj2[1] = str(r_G[0])
             traj2[2] = str(r_G[1])
@@ -130,7 +164,7 @@ with open((sys.argv[1].split("(?<!.),(?!.)"))[0]+"_center.xyz","w") as fout:
       exit(1)
     sp = traj[l].split()
     traj2[0] = sp[0]
-    # Wrapping
+    # Centering
     r_G = [float(sp[1]),float(sp[2]),float(sp[3])]
     rr_G = [0.0 for z in r3]
     r_G[0] = r_G[0] - x_G/Mass
