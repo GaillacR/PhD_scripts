@@ -116,14 +116,6 @@ with open((sys.argv[1].split("(?<!.),(?!.)"))[0]+"_center.xyz","w") as fout:
             r_G[1] = r_G[1] - y_G/Mass
             r_G[2] = r_G[2] - z_G/Mass
             rr_G = [0.0 for z in r3]
-            if (Cell.alpha==90.0 and Cell.beta==90.0 and Cell.gamma==90.0):
-              if (abs(r_G[0])>Cell.a/2 or abs(r_G[1])>Cell.b/2 or abs(r_G[2])>Cell.c/2):
-                print r_G
-                print rr_G
-                print int(round(rr_G[0])), int(round(rr_G[1])), int(round(rr_G[2]))
-                print [Cell.a/2,Cell.b/2,Cell.c/2]
-                exit(1)
-
             #######################
             traj2[1] = str(r_G[0])
             traj2[2] = str(r_G[1])
