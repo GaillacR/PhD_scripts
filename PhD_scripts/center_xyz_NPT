@@ -65,8 +65,6 @@ y_G = 0.0
 z_G = 0.0
 traj2 = ["H",0.0,0.0,0.0]
 Mass = 0.0
-extlist1=["xyz"]
-extlist2=["vel","frc"]
 
 ratoms=[]
 r3=[0,1,2]
@@ -80,173 +78,101 @@ try:
 except IOError as e:
   fin = gzip.open(sys.argv[1]+".gz",'rt')
 
-with open((sys.argv[1].split("."))[0]+"_clean."+sys.argv[1].split(".")[1],"w") as fout:
-  if (sys.argv[1].split(".")[1] in extlist1):
-    for line in fin:
-      sp = line.split()
-      if (cl==0):
-        Numb_Atoms = int(sp[0])
-        ratoms = [x for x in range(Numb_Atoms)]
+with open((sys.argv[1].split("."))[0]+"_center."+sys.argv[1].split(".")[1],"w") as fout:
+  for line in fin:
+    sp = line.split()
+    if (cl==0):
+      Numb_Atoms = int(sp[0])
+      ratoms = [x for x in range(Numb_Atoms)]
+      traj = ["H 0.0 0.0 0.0" for l in ratoms]
+      print len(traj)
+      a = np.linalg.norm(A[0])
+      b = np.linalg.norm(B[0])
+      c = np.linalg.norm(C[0])
+      gamma = np.arccos(np.dot(A[0],B[0])/(a*b))
+      beta = np.arccos(np.dot(A[0],C[0])/(a*c))
+      alpha = np.arccos(np.dot(B[0],C[0])/(b*c))
+      Cell = pbc.make_cell(a, b, c, alpha, beta, gamma)
+      Cell.C = pbc.make_cell_C(Cell)
+    elif (cl!=0):
+      if ("i" in sp and "=" in sp):
+        count_tmp = int(sp[2].strip(","))
+        count_traj = 0
+        x_G = 0.0
+        y_G = 0.0
+        z_G = 0.0
         traj = ["H 0.0 0.0 0.0" for l in ratoms]
-        print len(traj)
-        a = np.linalg.norm(A[0])
-        b = np.linalg.norm(B[0])
-        c = np.linalg.norm(C[0])
-        gamma = np.arccos(np.dot(A[0],B[0])/(a*b))
-        beta = np.arccos(np.dot(A[0],C[0])/(a*c))
-        alpha = np.arccos(np.dot(B[0],C[0])/(b*c))
+        a = np.linalg.norm(A[count_tmp])
+        b = np.linalg.norm(B[count_tmp])
+        c = np.linalg.norm(C[count_tmp])
+        gamma = np.arccos(np.dot(A[count_tmp],B[count_tmp])/(a*b))
+        beta = np.arccos(np.dot(A[count_tmp],C[count_tmp])/(a*c))
+        alpha = np.arccos(np.dot(B[count_tmp],C[count_tmp])/(b*c))
         Cell = pbc.make_cell(a, b, c, alpha, beta, gamma)
         Cell.C = pbc.make_cell_C(Cell)
-      elif (cl!=0):
-        if ("i" in sp and "=" in sp):
-          count_tmp = int(sp[2].strip(","))
-          count_traj = 0
-          x_G = 0.0
-          y_G = 0.0
-          z_G = 0.0
-          traj = ["H 0.0 0.0 0.0" for l in ratoms]
-          a = np.linalg.norm(A[count_tmp])
-          b = np.linalg.norm(B[count_tmp])
-          c = np.linalg.norm(C[count_tmp])
-          gamma = np.arccos(np.dot(A[count_tmp],B[count_tmp])/(a*b))
-          beta = np.arccos(np.dot(A[count_tmp],C[count_tmp])/(a*c))
-          alpha = np.arccos(np.dot(B[count_tmp],C[count_tmp])/(b*c))
-          Cell = pbc.make_cell(a, b, c, alpha, beta, gamma)
-          Cell.C = pbc.make_cell_C(Cell)
-          if (count_tmp > count2): count = count_tmp
-          if (count > count3):
-            fout.write(str(Numb_Atoms)+"\n"+line)
-            count3 = count
-            cl_tmp = cl
-          if (count > count2): count2=count
-        else:
-          if (cl<=cl_tmp+Numb_Atoms and cl>cl_tmp):
-            traj[count_traj] = line
-            ## Wrapping
-            r_G = [float(sp[1]),float(sp[2]),float(sp[3])]
-            #######################
-            x_G = x_G + r_G[0]*float(atMasses[sp[0]])
-            y_G = y_G + r_G[1]*float(atMasses[sp[0]])
-            z_G = z_G + r_G[2]*float(atMasses[sp[0]])
-            if (cl<Numb_Atoms+2): Mass = Mass + float(atMasses[sp[0]])
-            count_traj = count_traj + 1
-          elif (cl==cl_tmp+Numb_Atoms+1):
-            if (cl<Numb_Atoms+10000) : print x_G/Mass, y_G/Mass, z_G/Mass, Mass
-            for l in ratoms:
-              if (Mass==0):
-                print line
-                print "Mass is 0"
-                exit(1)
-              sp = traj[l].split()
-              traj2[0] = sp[0]
-              ## Wrapping
-              r_G = [float(sp[1]),float(sp[2]),float(sp[3])]
-              r_G[0] = r_G[0] - x_G/Mass
-              r_G[1] = r_G[1] - y_G/Mass
-              r_G[2] = r_G[2] - z_G/Mass
-              rr_G = [0.0 for z in r3]
-              pbc.cart2red(r_G,rr_G,Cell)
-              if (max(rr_G)>0.5 or min(rr_G)<-0.5):
-                for k in r3:
-                  if (abs(rr_G[k])>0.5): rr_G[k] = rr_G[k] - round(rr_G[k])
-              pbc.red2cart(r_G,rr_G,Cell)
-              if (Cell.alpha==90.0 and Cell.beta==90.0 and Cell.gamma==90.0):
-                if (abs(r_G[0])>Cell.a/2 or abs(r_G[1])>Cell.b/2 or abs(r_G[2])>Cell.c/2):
-                  print r_G
-                  print rr_G
-                  print int(round(rr_G[0])), int(round(rr_G[1])), int(round(rr_G[2]))
-                  print [Cell.a/2,Cell.b/2,Cell.c/2]
-                  exit(1)
-
-              #######################
-              traj2[1] = str(r_G[0])
-              traj2[2] = str(r_G[1])
-              traj2[3] = str(r_G[2])
-              fout.write("\t".join(traj2))
-              fout.write("\n")
-      cl = cl +1
-    for l in ratoms:
-      if (Mass==0):
-        print line
-        print "Mass is 0"
-        exit(1)
-      sp = traj[l].split()
-      traj2[0] = sp[0]
-      # Wrapping
-      r_G = [float(sp[1]),float(sp[2]),float(sp[3])]
-      rr_G = [0.0 for z in r3]
-      r_G[0] = r_G[0] - x_G/Mass
-      r_G[1] = r_G[1] - y_G/Mass
-      r_G[2] = r_G[2] - z_G/Mass
-      pbc.cart2red(r_G,rr_G,Cell)
-      if (max(rr_G)>0.5 or min(rr_G)<-0.5):
-        for k in r3:
-          if (abs(rr_G[k])>0.5): rr_G[k] = rr_G[k] - round(rr_G[k])
-      pbc.red2cart(r_G,rr_G,Cell)
-      #######################
-      traj2[1] = str(r_G[0])
-      traj2[2] = str(r_G[1])
-      traj2[3] = str(r_G[2])
-      fout.write("\t".join(traj2))
-      fout.write("\n")
-
-  elif (sys.argv[1].split(".")[1] in extlist2):
-    for line in fin:
-      sp = line.split()
-      if (cl==0):
-        Numb_Atoms = int(sp[0])
-        ratoms = [x for x in range(Numb_Atoms)]
-        traj = ["H 0.0 0.0 0.0" for l in ratoms]
-        print len(traj)
-      if (cl!=0):
-        if ("i" in sp and "=" in sp):
-          count_tmp = int(sp[2].strip(","))
-          count_traj = 0
-          traj = ["H 0.0 0.0 0.0" for l in ratoms]
-          if (count_tmp > count2): count = count_tmp
-          if (count > count3):
-            fout.write(str(Numb_Atoms)+"\n"+line)
-            count3 = count
-            cl_tmp = cl
-          if (count > count2): count2=count
-        else:
-          if (cl<=cl_tmp+Numb_Atoms and cl>cl_tmp):
-            traj[count_traj] = line
-            if (len(line.split())<4):
+        if (count_tmp > count2): count = count_tmp
+        if (count > count3):
+          fout.write(str(Numb_Atoms)+"\n"+line)
+          count3 = count
+          cl_tmp = cl
+        if (count > count2): count2=count
+      else:
+        if (cl<=cl_tmp+Numb_Atoms and cl>cl_tmp):
+          traj[count_traj] = line
+          ## Centering
+          r_G = [float(sp[1]),float(sp[2]),float(sp[3])]
+          #######################
+          x_G = x_G + r_G[0]*float(atMasses[sp[0]])
+          y_G = y_G + r_G[1]*float(atMasses[sp[0]])
+          z_G = z_G + r_G[2]*float(atMasses[sp[0]])
+          if (cl<Numb_Atoms+2): Mass = Mass + float(atMasses[sp[0]])
+          count_traj = count_traj + 1
+        elif (cl==cl_tmp+Numb_Atoms+1):
+          if (cl<Numb_Atoms+10000) : print x_G/Mass, y_G/Mass, z_G/Mass, Mass
+          for l in ratoms:
+            if (Mass==0):
               print line
+              print "Mass is 0"
               exit(1)
-            count_traj = count_traj + 1
-          elif (cl==cl_tmp+Numb_Atoms+1):
-            for l in ratoms:
-              traj2[0] = traj[l].split()[0]
-              traj2[1] = str(float(traj[l].split()[1]))
-              traj2[2] = str(float(traj[l].split()[2]))
-              traj2[3] = str(float(traj[l].split()[3]))
-              fout.write("\t".join(traj2))
-              fout.write("\n")
-      cl = cl +1
-    for l in ratoms:
-      traj2[0] = traj[l].split()[0]
-      traj2[1] = str(float(traj[l].split()[1]))
-      traj2[2] = str(float(traj[l].split()[2]))
-      traj2[3] = str(float(traj[l].split()[3]))
-      fout.write("\t".join(traj2))
-      fout.write("\n")
+            sp = traj[l].split()
+            traj2[0] = sp[0]
+            ## Centering
+            r_G = [float(sp[1]),float(sp[2]),float(sp[3])]
+            r_G[0] = r_G[0] - x_G/Mass
+            r_G[1] = r_G[1] - y_G/Mass
+            r_G[2] = r_G[2] - z_G/Mass
+            rr_G = [0.0 for z in r3]
+            if (Cell.alpha==90.0 and Cell.beta==90.0 and Cell.gamma==90.0):
+              if (abs(r_G[0])>Cell.a/2 or abs(r_G[1])>Cell.b/2 or abs(r_G[2])>Cell.c/2):
+                print r_G
+                print rr_G
+                print int(round(rr_G[0])), int(round(rr_G[1])), int(round(rr_G[2]))
+                print [Cell.a/2,Cell.b/2,Cell.c/2]
+                exit(1)
 
-  elif (sys.argv[1].split(".")[1]=="ener"):
-    for line in fin:
-      if (cl==0): fout.write(line)
-      if (cl!=0):
-        sp = line.split()
-        if (is_int(sp[0])==False):
-          print "Look at line", cl, sp[0], line
-          print sp[0], sp[1]
-          print sp
-          exit(1)
-        if (int(sp[0])==step2+1): step = int(sp[0])
-        if (step==step3+1):
-          fout.write(line)
-          step3 = step
-        if (step==step2+1): step2 = step
-      cl = cl + 1
-
+            #######################
+            traj2[1] = str(r_G[0])
+            traj2[2] = str(r_G[1])
+            traj2[3] = str(r_G[2])
+            fout.write("\t".join(traj2))
+            fout.write("\n")
+    cl = cl +1
+  for l in ratoms:
+    if (Mass==0):
+      print line
+      print "Mass is 0"
+      exit(1)
+    sp = traj[l].split()
+    traj2[0] = sp[0]
+    # Centering
+    r_G = [float(sp[1]),float(sp[2]),float(sp[3])]
+    rr_G = [0.0 for z in r3]
+    r_G[0] = r_G[0] - x_G/Mass
+    r_G[1] = r_G[1] - y_G/Mass
+    r_G[2] = r_G[2] - z_G/Mass
+    #######################
+    traj2[1] = str(r_G[0])
+    traj2[2] = str(r_G[1])
+    traj2[3] = str(r_G[2])
+    fout.write("\t".join(traj2))
+    fout.write("\n")
