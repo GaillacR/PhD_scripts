@@ -40,7 +40,13 @@ print sys.argv[1], sys.argv[2]
 # Read the cell parameters in
 split = str.split
 cell_f = sys.argv[2]
-[Cell, Cell.C] = rw.readCell(cell_f)
+[Ax, Ay, Az, Bx, By, Bz, Cx, Cy, Cz] = rw.readFromColfile(cell_f,header=1,first=0)[2:11]
+A2 = np.array([Ax,Ay,Az])
+A = np.transpose(A2)
+B2 = np.array([Bx,By,Bz])
+B = np.transpose(B2)
+C2 = np.array([Cx,Cy,Cz])
+C = np.transpose(C2)
 ################################################
 
 step2=-1
@@ -74,7 +80,7 @@ try:
 except IOError as e:
   fin = gzip.open(sys.argv[1]+".gz",'rt')
 
-with open((sys.argv[1].split("(?<!.),(?!.)"))[0]+"_clean."+sys.argv[1].split(".")[1],"w") as fout:
+with open((sys.argv[1].split("."))[0]+"_clean."+sys.argv[1].split(".")[1],"w") as fout:
   if (sys.argv[1].split(".")[1] in extlist1):
     for line in fin:
       sp = line.split()
@@ -83,7 +89,15 @@ with open((sys.argv[1].split("(?<!.),(?!.)"))[0]+"_clean."+sys.argv[1].split("."
         ratoms = [x for x in range(Numb_Atoms)]
         traj = ["H 0.0 0.0 0.0" for l in ratoms]
         print len(traj)
-      if (cl!=0):
+        a = np.linalg.norm(A[0])
+        b = np.linalg.norm(B[0])
+        c = np.linalg.norm(C[0])
+        gamma = np.arccos(np.dot(A[0],B[0])/(a*b))
+        beta = np.arccos(np.dot(A[0],C[0])/(a*c))
+        alpha = np.arccos(np.dot(B[0],C[0])/(b*c))
+        Cell = pbc.make_cell(a, b, c, alpha, beta, gamma)
+        Cell.C = pbc.make_cell_C(Cell)
+      elif (cl!=0):
         if ("i" in sp and "=" in sp):
           count_tmp = int(sp[2].strip(","))
           count_traj = 0
@@ -91,6 +105,14 @@ with open((sys.argv[1].split("(?<!.),(?!.)"))[0]+"_clean."+sys.argv[1].split("."
           y_G = 0.0
           z_G = 0.0
           traj = ["H 0.0 0.0 0.0" for l in ratoms]
+          a = np.linalg.norm(A[count_tmp])
+          b = np.linalg.norm(B[count_tmp])
+          c = np.linalg.norm(C[count_tmp])
+          gamma = np.arccos(np.dot(A[count_tmp],B[count_tmp])/(a*b))
+          beta = np.arccos(np.dot(A[count_tmp],C[count_tmp])/(a*c))
+          alpha = np.arccos(np.dot(B[count_tmp],C[count_tmp])/(b*c))
+          Cell = pbc.make_cell(a, b, c, alpha, beta, gamma)
+          Cell.C = pbc.make_cell_C(Cell)
           if (count_tmp > count2): count = count_tmp
           if (count > count3):
             fout.write(str(Numb_Atoms)+"\n"+line)
