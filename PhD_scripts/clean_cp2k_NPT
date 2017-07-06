@@ -137,7 +137,7 @@ with open((sys.argv[1].split("."))[0]+"_clean."+sys.argv[1].split(".")[1],"w") a
             if (cl<Numb_Atoms+2): Mass = Mass + float(atMasses[sp[0]])
             count_traj = count_traj + 1
           elif (cl==cl_tmp+Numb_Atoms+1):
-            if (cl<Numb_Atoms+10000) : print x_G/Mass, y_G/Mass, z_G/Mass, Mass
+            #if (cl<Numb_Atoms+10000) : print x_G/Mass, y_G/Mass, z_G/Mass, Mass
             for l in ratoms:
               if (Mass==0):
                 print line
