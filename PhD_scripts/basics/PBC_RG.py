@@ -235,7 +235,7 @@ def NeiAtoms(A, atoms, cell, n=2, dmax=20):
     if (len(atoms)>0):
       b = [get_coord(atoms[i]) for i in range(len(atoms))]
       d = [0.0 for i in range(len(atoms))]
-      a = get_coord(A)
+      a = get_coord(Nei[k-1])
       for i in range(len(b)):
         d[i] = distance_cart(a,ClosestImage(a,b[i],cell),cell)
       sortdist = sorted(d)
@@ -254,8 +254,8 @@ def NeiAtoms(A, atoms, cell, n=2, dmax=20):
   if (make_point(0.0,0.0,0.0,'H') in Nei): Nei.remove(make_point(0.0,0.0,0.0,'H'))
   return Nei
 
-def Barycenter(list):
-  coords = [get_coord(list[i]) for i in range(len(list))]
+def Barycenter(list,cell):
+  coords = [ClosestImage(get_coord(list[0]),get_coord(list[i]),cell) for i in range(len(list))]
   elts = [list[i].elt for i in range(len(list))]
   coord = [0.0 for x in range(3)]
   Mass = 0

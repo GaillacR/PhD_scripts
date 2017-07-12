@@ -69,10 +69,10 @@ while (k < L):
         l = l - 1
         L = len(CycAtoms)
       l = l+1
-  for i in range(len(cycle)):
-    r0 = pbc.ClosestImage(pbc.get_coord(cycle[0]),pbc.get_coord(cycle[i]),Cell)
-    cycle[i] = pbc.make_point(r0[0],r0[1],r0[2],cycle[i].elt)
-  posX = pbc.Barycenter(cycle)
+  #for i in range(len(cycle)):
+  #  r0 = pbc.ClosestImage(pbc.get_coord(cycle[0]),pbc.get_coord(cycle[i]),Cell)
+  #  cycle[i] = pbc.make_point(r0[0],r0[1],r0[2],cycle[i].elt)
+  posX = pbc.Barycenter(cycle,Cell)
   X = pbc.make_point(posX[0],posX[1],posX[2],"X")
   for j in range(len(CycAtoms2)):
     for p in range(len(cycle)):
@@ -115,16 +115,22 @@ for time in range(Numbsteps):
   while (k < L):
     snap = list()
     cycle = [CycAtoms2[cycles[count][0]],CycAtoms2[cycles[count][1]],CycAtoms2[cycles[count][2]],CycAtoms2[cycles[count][3]],CycAtoms2[cycles[count][4]]]
-    for i in range(len(cycle)):
-      r0 = pbc.ClosestImage(pbc.get_coord(cycle[0]),pbc.get_coord(cycle[i]),Cell)
-      cycle[i] = pbc.make_point(r0[0],r0[1],r0[2],cycle[i].elt)
-    posX = pbc.Barycenter(cycle)
+    #for i in range(len(cycle)):
+    #  r0 = pbc.ClosestImage(pbc.get_coord(cycle[0]),pbc.get_coord(cycle[i]),Cell)
+    #  cycle[i] = pbc.make_point(r0[0],r0[1],r0[2],cycle[i].elt)
+    posX = pbc.Barycenter(cycle,Cell)
     X = pbc.make_point(posX[0],posX[1],posX[2],"X")
-    for p in range(len(cycle)):
-      dist = pbc.distance_cart(posX,pbc.get_coord(cycle[p]),Cell)
-      if (dist > min([Cell.a,Cell.b,Cell.c])/2):
-        if (cycles[count] in cycles2):
-          cycles2.remove(cycles[count])
+    dists = [[pbc.distance_cart(pbc.get_coord(cycle[p]),pbc.get_coord(cycle[l]),Cell) for p in range(len(cycle)) if p != l] for l in range(len(cycle))]
+    dist = [min(dists[i]) for i in range(len(dists))]
+    if (max(dist) > 2.5):
+      if (cycles[count] in cycles2):
+        print dist, time, Numbsteps
+        idx = dist.index(max(dist))
+        idx2 = dists[idx].index(max(dist))
+        print cycle[0].elt, cycle[1].elt, cycle[2].elt, cycle[3].elt, cycle[4].elt
+        if (idx2<idx): print cycle[idx].elt, cycle[idx2].elt, idx, idx2
+        else :  print cycle[idx].elt, cycle[idx2+1].elt, idx, idx2+1
+        cycles2.remove(cycles[count])
     #traj.append(X)
     L = L-5
     count = count + 1
@@ -172,7 +178,7 @@ for time in range(Numbsteps):
       for i in range(len(cycle)):
         r0 = pbc.ClosestImage(pbc.get_coord(cycle[0]),pbc.get_coord(cycle[i]),Cell)
         cycle[i] = pbc.make_point(r0[0],r0[1],r0[2],cycle[i].elt)
-      posX = pbc.Barycenter(cycle)
+      posX = pbc.Barycenter(cycle,Cell)
       X = pbc.make_point(posX[0],posX[1],posX[2],"X")
       traj.append(X)
     L = L-5
