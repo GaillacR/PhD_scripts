@@ -19,15 +19,26 @@ header = "#  C-C C-N H-C H-H H-N N-N Zn-C Zn-H Zn-N Zn-Zn"
 
 
 cell_f = sys.argv[3]
-[Cell, Cell.C] = rw.readCell(cell_f)
-a = Cell.a
-b = Cell.b
-c = Cell.c
-print Cell.a,Cell.b,Cell.c
-print np.cos(Cell.alpha)
-print np.cos(Cell.beta)
-print np.cos(Cell.gamma)
-Vol = a*b*c*np.sqrt(2*np.cos(Cell.alpha)*np.cos(Cell.beta)*np.cos(Cell.gamma)+1- np.cos(Cell.alpha)**2- np.cos(Cell.beta)**2- np.cos(Cell.gamma)**2)
+[Ax, Ay, Az, Bx, By, Bz, Cx, Cy, Cz] = rw.readFromColfile(cell_f,header=1,first=0)[2:11]
+A2 = np.array([Ax,Ay,Az])
+A = np.transpose(A2)
+B2 = np.array([Bx,By,Bz])
+B = np.transpose(B2)
+C2 = np.array([Cx,Cy,Cz])
+C = np.transpose(C2)
+
+i=0
+Vols = np.zeros(len(A))
+for i in range(len(A)):
+  a = np.linalg.norm(A[i])
+  b = np.linalg.norm(B[i])
+  c = np.linalg.norm(C[i])
+  gamma = np.arccos(np.dot(A[i],B[i])/(a*b))
+  beta = np.arccos(np.dot(A[i],C[i])/(a*c))
+  alpha = np.arccos(np.dot(B[i],C[i])/(b*c))
+  Vols[i] = a*b*c*np.sqrt(2*np.cos(alpha)*np.cos(beta)*np.cos(gamma)+1- np.cos(alpha)**2- np.cos(beta)**2- np.cos(gamma)**2)
+
+Vol = np.mean(Vols)
 
 refPos = rw.readFromXYZFile(sys.argv[2]+".xyz",1,1,2)[0]
 Atoms_Numb = len(refPos)
