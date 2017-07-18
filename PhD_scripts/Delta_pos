@@ -33,6 +33,6 @@ for t in range(nconf):
     pos0 = pbc.get_coord(refPos[n])
     diff[n] = [post[i]-pos0[i] for i in range(3)]
     Deltas[t] = Deltas[t]+math.fsum([diff[n][j]**2 for j in range(3)])
-  Out.write("%d %f" %(t, Deltas[t]/nat))
+  Out.write("%d %f\n" %(t, Deltas[t]/nat))
 
 Out.close()

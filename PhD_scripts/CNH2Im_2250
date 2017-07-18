@@ -122,7 +122,7 @@ for time in range(Numbsteps):
     X = pbc.make_point(posX[0],posX[1],posX[2],"X")
     dists = [[pbc.distance_cart(pbc.get_coord(cycle[p]),pbc.get_coord(cycle[l]),Cell) for p in range(len(cycle)) if p != l] for l in range(len(cycle))]
     dist = [min(dists[i]) for i in range(len(dists))]
-    if (max(dist) > 2.5):
+    if (max(dist) > 2):
       if (cycles[count] in cycles2):
         print dist, time, Numbsteps
         idx = dist.index(max(dist))
