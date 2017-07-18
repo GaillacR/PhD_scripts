@@ -1,0 +1,88 @@
+#!/usr/bin/env python
+
+import numpy as np
+import ReadWrite as rw
+import PBC_RG as pbc
+import sys
+
+col = 1
+if (len(sys.argv)==5):
+  col = int(sys.argv[4])-1
+
+Atfact={"H": 1.00000, "C": 6.00054, "N": 7.00100, "O": 8.00166, "Zn": 30.1630}
+r = rw.readFromColfile(sys.argv[1]+"_CC",header=3)[0]
+dr = r[1]-r[0]
+partialRDF = [rw.readFromColfile(sys.argv[1]+"_CC",header=3,lim=col+1)[col], rw.readFromColfile(sys.argv[1]+"_CN",header=3,lim=col+1)[col], rw.readFromColfile(sys.argv[1]+"_HC",header=3,lim=col+1)[col], rw.readFromColfile(sys.argv[1]+"_HH",header=3,lim=col+1)[col], rw.readFromColfile(sys.argv[1]+"_HN",header=3,lim=col+1)[col], rw.readFromColfile(sys.argv[1]+"_NN",header=3,lim=col+1)[col], rw.readFromColfile(sys.argv[1]+"_ZnC",header=3,lim=col+1)[col], rw.readFromColfile(sys.argv[1]+"_ZnH",header=3,lim=col+1)[col], rw.readFromColfile(sys.argv[1]+"_ZnN",header=3,lim=col+1)[col], rw.readFromColfile(sys.argv[1]+"_ZnZn",header=3,lim=col+1)[col]]
+cples={0:"C-C", 1:"C-N", 2:"H-C", 3:"H-H", 4:"H-N", 5:"N-N", 6:"Zn-C", 7:"Zn-H", 8:"Zn-N", 9:"Zn-Zn"}
+header = "#  C-C C-N H-C H-H H-N N-N Zn-C Zn-H Zn-N Zn-Zn"
+
+
+
+cell_f = sys.argv[3]
+[Cell, Cell.C] = rw.readCell(cell_f)
+a = Cell.a
+b = Cell.b
+c = Cell.c
+print Cell.a,Cell.b,Cell.c
+print np.cos(Cell.alpha)
+print np.cos(Cell.beta)
+print np.cos(Cell.gamma)
+Vol = a*b*c*np.sqrt(2*np.cos(Cell.alpha)*np.cos(Cell.beta)*np.cos(Cell.gamma)+1- np.cos(Cell.alpha)**2- np.cos(Cell.beta)**2- np.cos(Cell.gamma)**2)
+
+refPos = rw.readFromXYZFile(sys.argv[2]+".xyz",1,1,2)[0]
+Atoms_Numb = len(refPos)
+Used_elements = pbc.get_elements(refPos)
+N = len(Used_elements)
+Mass = Atoms_Numb
+coeff = {}
+for e in range(N):
+  coeff[Used_elements[e]] = 0
+
+for b in range(Atoms_Numb):
+  for at in range(Atoms_Numb):
+    coord2 = pbc.get_coord(refPos[at])
+    coeff[refPos[at].elt] = coeff[refPos[at].elt] + 1
+rho0 = float(Mass)/float(Vol)
+for key in coeff:
+  coeff[key] = float(coeff[key])/float(Mass*Atoms_Numb)
+print coeff
+
+freq = np.linspace(0.1,100,8000)
+Aij = [[0.0 for x in range(len(freq))] for y in range(len(cples))]
+
+for c in range(len(cples)):
+  for f in range(len(freq)):
+    sumcb = 0
+    for e in range(N):
+      sumcb = sumcb + pbc.FormFact(freq[f],Used_elements[e])**2*coeff[Used_elements[e]]
+    elt1 = cples[c].split("-")[0]
+    elt2 = cples[c].split("-")[1]
+    ci = coeff[elt1]
+    cj = coeff[elt2]
+    fi = pbc.FormFact(freq[f],elt1)
+    fj = pbc.FormFact(freq[f],elt2)
+    pre = 4.0*np.pi*rho0*((r[0]+r[1])/2)
+    Aij[c][f] = pre*(((partialRDF[c][0]+partialRDF[c][1])/2)-1)*(dr)*np.sin(freq[f]*((r[0]+r[1])/2))/freq[f]
+    for j in range(1,len(partialRDF[c])-1):
+      pre = 4.0*np.pi*rho0*((r[j]+r[j+1])/2)
+      Aij[c][f] = Aij[c][f] + pre*(((partialRDF[c][j]+partialRDF[c][j+1])/2)-1)*(dr)*np.sin(freq[f]*((r[j]+r[j+1])/2))/freq[f]
+    if(elt1==elt2):
+      Aij[c][f] = (ci*cj*fi*fj/sumcb)*Aij[c][f]
+    else:
+      Aij[c][f] = (2*ci*cj*fi*fj/sumcb)*Aij[c][f]
+
+FQ = [0.0 for x in range(len(freq))]
+for f in range(len(freq)):
+  for c in range(len(cples)):
+    FQ[f] = FQ[f] + Aij[c][f]
+
+#print cples
+#print header
+with open(sys.argv[1]+".FQ","w") as fout:
+  fout.write(header+"\n")
+  for f in range(len(freq)):
+    fout.write(str(freq[f])+" ")
+    for c in range(len(cples)):
+      fout.write(str(Aij[c][f])+" ")
+    fout.write(str(FQ[f]))
+    fout.write("\n")
