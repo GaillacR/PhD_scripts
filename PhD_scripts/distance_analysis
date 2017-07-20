@@ -35,7 +35,7 @@ cell_f = sys.argv[2]
 [Cell, Cell.C] = rw.readCell(cell_f)
 
 # Read the trajectory in
-# and keep only a tenth of it without the first picoseconds (dt=0.5fs)
+# and keep only every 5 ps (a tenth of it (dt=0.5fs)) without the first picoseconds
 if (is_tenth==0):
   trajPos = rw.readFromXYZFile(sys.argv[1] + ".xyz",int(10*float(0.5/dt)),first_step)
 elif (is_tenth==1):
