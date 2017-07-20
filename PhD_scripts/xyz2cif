@@ -11,7 +11,10 @@ c2r = ModuleType("Cart2Red")
 data = open("/home/gaillac/.local/bin/PhD_scripts/Cart2Red").read()
 exec data in c2r.__dict__
 
-step = 100
+dt = 0.5
+if (len(sys.argv)>3): dt = float(sys.argv[3])
+
+step = int(100*float(0.5/dt))
 Traj = rw.readFromXYZFile(sys.argv[1],step=step)
 nconf = len(Traj)
 
