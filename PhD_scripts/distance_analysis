@@ -24,6 +24,11 @@ if (len(sys.argv)>7):
   fst = sys.argv[6]
   scd = sys.argv[7]
 
+dt = 0.5
+for i in range(len(sys.argv)):
+  if ("dt=" in sys.argv[i]):
+    dt = float(sys.argv[i].split("=")[-1])
+
 # Read the cell parameters in
 split = str.split
 cell_f = sys.argv[2]
@@ -32,7 +37,7 @@ cell_f = sys.argv[2]
 # Read the trajectory in
 # and keep only a tenth of it without the first picoseconds (dt=0.5fs)
 if (is_tenth==0):
-  trajPos = rw.readFromXYZFile(sys.argv[1] + ".xyz",10,first_step)
+  trajPos = rw.readFromXYZFile(sys.argv[1] + ".xyz",int(10*float(0.5/dt)),first_step)
 elif (is_tenth==1):
   trajPos = rw.readFromXYZFile(sys.argv[1] + ".xyz",1,first_step)
 
