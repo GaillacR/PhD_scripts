@@ -9,6 +9,14 @@ col = 1
 if (len(sys.argv)==5):
   col = int(sys.argv[4])-1
 
+fx = 1
+fy = 1
+fz = 1
+if (len(sys.argv)>6):
+  fx = int(sys.argv[-3])
+  fy = int(sys.argv[-2])
+  fz = int(sys.argv[-1])
+
 Atfact={"H": 1.00000, "C": 6.00054, "N": 7.00100, "O": 8.00166, "Zn": 30.1630}
 r = rw.readFromColfile(sys.argv[1]+"_CC",header=3)[0]
 dr = r[1]-r[0]
@@ -36,7 +44,7 @@ for i in range(len(A)):
   gamma = np.arccos(np.dot(A[i],B[i])/(a*b))
   beta = np.arccos(np.dot(A[i],C[i])/(a*c))
   alpha = np.arccos(np.dot(B[i],C[i])/(b*c))
-  Vols[i] = a*b*c*np.sqrt(2*np.cos(alpha)*np.cos(beta)*np.cos(gamma)+1- np.cos(alpha)**2- np.cos(beta)**2- np.cos(gamma)**2)
+  Vols[i] = fx*fy*fz*a*b*c*np.sqrt(2*np.cos(alpha)*np.cos(beta)*np.cos(gamma)+1- np.cos(alpha)**2- np.cos(beta)**2- np.cos(gamma)**2)
 
 Vol = np.mean(Vols)
 
