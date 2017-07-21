@@ -8,6 +8,13 @@ from chemfiles import Trajectory, UnitCell, Atom, Topology
 
 xyz = sys.argv[1]
 cell_f = sys.argv[2]
+fx = 1
+fy = 1
+fz = 1
+if (len(sys.argv)>3):
+  fx = int(sys.argv[3])
+  fy = int(sys.argv[4])
+  fz = int(sys.argv[5])
 
 traj = Trajectory(xyz)
 [Ax, Ay, Az, Bx, By, Bz, Cx, Cy, Cz] = rw.readFromColfile(cell_f,header=1,first=0)[2:11]
@@ -27,7 +34,7 @@ with Trajectory(xyz.split(".xyz")[0]+".pdb", "w") as output:
     gamma = np.arccos(np.dot(A[i],B[i])/(a*b))*180.0/np.pi
     beta = np.arccos(np.dot(A[i],C[i])/(a*c))*180.0/np.pi
     alpha = np.arccos(np.dot(B[i],C[i])/(b*c))*180.0/np.pi
-    Cell = UnitCell(a,b,c,alpha,beta,gamma)
+    Cell = UnitCell(fx*a,fy*b,fz*c,alpha,beta,gamma)
     frame.set_cell(Cell)
     output.write(frame)
     i = i + 1
