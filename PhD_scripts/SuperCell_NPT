@@ -8,13 +8,6 @@ import numpy as np
 s=1
 if (len(sys.argv)==7): s = int(sys.argv[6])
 cell_f = sys.argv[2]
-[Ax, Ay, Az, Bx, By, Bz, Cx, Cy, Cz] = rw.readFromColfile(cell_f,header=1,first=0)[2:11]
-A2 = np.array([Ax,Ay,Az])
-A = np.transpose(A2)
-B2 = np.array([Bx,By,Bz])
-B = np.transpose(B2)
-C2 = np.array([Cx,Cy,Cz])
-C = np.transpose(C2)
 
 
 factor = sys.argv[3]+sys.argv[4]+sys.argv[5]
@@ -44,8 +37,16 @@ except IOError:
 
 fstep = int(first_step)
 first_step = int(first_step*s)
+print first_step
 
 Intraj = rw.readFromXYZFile(sys.argv[1],step=s,first=first_step)
+[Ax, Ay, Az, Bx, By, Bz, Cx, Cy, Cz] = rw.readFromColfile(cell_f,header=1,first=0)[2:11]
+A2 = np.array([Ax,Ay,Az])
+A = np.transpose(A2)[first_step-1:-1]
+B2 = np.array([Bx,By,Bz])
+B = np.transpose(B2)[first_step-1:-1]
+C2 = np.array([Cx,Cy,Cz])
+C = np.transpose(C2)[first_step-1:-1]
 
 sx = 1
 sy = 1
