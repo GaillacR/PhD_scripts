@@ -37,16 +37,16 @@ except IOError:
 
 fstep = int(first_step)
 first_step = int(first_step*s)
-print first_step
+print first_step, fstep
 
 Intraj = rw.readFromXYZFile(sys.argv[1],step=s,first=first_step)
 [Ax, Ay, Az, Bx, By, Bz, Cx, Cy, Cz] = rw.readFromColfile(cell_f,header=1,first=0)[2:11]
 A2 = np.array([Ax,Ay,Az])
-A = np.transpose(A2)[first_step-1:-1]
+A = np.transpose(A2)
 B2 = np.array([Bx,By,Bz])
-B = np.transpose(B2)[first_step-1:-1]
+B = np.transpose(B2)
 C2 = np.array([Cx,Cy,Cz])
-C = np.transpose(C2)[first_step-1:-1]
+C = np.transpose(C2)
 
 sx = 1
 sy = 1
@@ -58,12 +58,12 @@ if (xfactor<0): sx=-1
 if (yfactor<0): sy=-1
 if (zfactor<0): sz=-1
 for f in range(len(Intraj)):
-  a = np.linalg.norm(A[f*10+fstep])
-  b = np.linalg.norm(B[f*10+fstep])
-  c = np.linalg.norm(C[f*10+fstep])
-  gamma = np.arccos(np.dot(A[f*10+fstep],B[f*10+fstep])/(a*b))
-  beta = np.arccos(np.dot(A[f*10+fstep],C[f*10+fstep])/(a*c))
-  alpha = np.arccos(np.dot(B[f*10+fstep],C[f*10+fstep])/(b*c))
+  a = np.linalg.norm(A[f*s+fstep])
+  b = np.linalg.norm(B[f*s+fstep])
+  c = np.linalg.norm(C[f*s+fstep])
+  gamma = np.arccos(np.dot(A[f*s+fstep],B[f*s+fstep])/(a*b))
+  beta = np.arccos(np.dot(A[f*s+fstep],C[f*s+fstep])/(a*c))
+  alpha = np.arccos(np.dot(B[f*s+fstep],C[f*s+fstep])/(b*c))
   Cell = pbc.make_cell(a, b, c, alpha, beta, gamma)
   Cell.C = pbc.make_cell_C(Cell)
   traj = list()
