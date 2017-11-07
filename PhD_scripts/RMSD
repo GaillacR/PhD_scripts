@@ -28,8 +28,9 @@ sys.stdout.write("All "+elt+" extracted\n")
 
 Nelt = len(traj[0])
 
-if (dt<2): nconf2 = int(min([nconf/10,20000/(10*dt)]))
-elif (dt>2): nconf2 = int(min([nconf/10,20000/dt]))
+#if (dt<2): nconf2 = int(min([nconf/10,20000/(10*dt)]))
+#elif (dt>2): nconf2 = int(min([nconf/10,20000/dt]))
+nconf2 = int(nconf/2)
 Rmsds = [[0.0 for x in range(nconf2)] for y in range(Nelt)]
 
 for E in range(Nelt):
