@@ -95,7 +95,7 @@ with open(sys.argv[1]+".out","r") as cryst:
             if (len(c)>1): fst = list(sp[0])[1]
             if (len(c)>1): scd = list(sp[0])[2]
             if (c == "c" and fst in figures and scd in figures): Cij[int(fst)-1][int(scd)-1] = float(sp[2])
-      print Cij[3][3]
+      Cij[1][0] = Cij[0][1]
       for k in range(3):
         for k2 in range(3):
           Cij[k][3+k2]=0.0
@@ -107,19 +107,27 @@ with open(sys.argv[1]+".out","r") as cryst:
         Cij[5][k]=0.0
       # c22=c11, c23=c13, c55=c44, c66=(c11-c12)/2  
       tmp=Cij[0][0]
-      tmp2=Cij[1][1]
+      if (Cij[1][1]!=0.0):
+        tmp2=Cij[1][1]
+      else:
+        tmp2 = tmp
       Cij[0][0]=(tmp+tmp2)/2.0
       Cij[1][1]=(tmp+tmp2)/2.0
 
       tmp=Cij[0][2]
-      tmp2=Cij[1][2]
+      if (Cij[1][2]!=0.0):
+        tmp2=Cij[1][2]
+      else:
+        tmp2 = tmp
       Cij[0][2]=(tmp+tmp2)/2.0
       Cij[1][2]=(tmp+tmp2)/2.0
 
       print Cij[3][3]
       Cij[4][4]=Cij[3][3]
 
-      Cij[5][5]=(Cij[0][0]-Cij[0][1])/2.0
+      print Cij[5][5]
+      if (Cij[5][5]==0):
+        Cij[5][5]=(Cij[0][0]-Cij[0][1])/2.0
 
     elif (len(sys.argv)>2 and Cclass=="cubic"):
       for k in range(L0):
@@ -161,5 +169,5 @@ with open(sys.argv[1]+".out","r") as cryst:
     print type(Cnp2)
     Cnp2 = np.true_divide(Cnp2, 2.0)
     with open(sys.argv[1]+".cij","w") as cij:
-      cij.write('\n'.join([' '.join(['{:8}'.format(item) for item in row]) for row in Cnp2]))
+      cij.write('\n'.join([' '.join(['{0:8}'.format(item) for item in row]) for row in Cnp2]))
       cij.write('\n')
