@@ -6,13 +6,18 @@ import sys
 
 fcol = int(sys.argv[2])-1
 lcol = int(sys.argv[3])-1
+try:
+  h = int(sys.argv[-1])
+except:
+  h = 0
 
 data_avg = []
 data_tot = {}
+print sys.argv
 with open(sys.argv[1],"w") as fout:
   for f in range(len(sys.argv)-4):
-    data = rw.readFromColfile(sys.argv[f+4],header=3)
-    data2 = rw.readFromColfile(sys.argv[f+4],header=3)
+    data = rw.readFromColfile(sys.argv[f+4],header=h)
+    data2 = rw.readFromColfile(sys.argv[f+4],header=h)
     data_tot[f] = data2[fcol:lcol+1][:][:]
     if (f==0):
       data_avg = data[fcol:lcol+1]
@@ -20,7 +25,7 @@ with open(sys.argv[1],"w") as fout:
       for c in range(fcol,lcol+1):
         for p in range(len(data_avg[0])):
           data_avg[c-fcol][p] = data_avg[c-fcol][p] + data[c][p]
-  data_std = [[[data_tot[x][y][z] for x in range(len(sys.argv)-4)] for y in range(fcol,lcol+1)] for z in range(len(data_avg[0]))]
+  data_std = [[[data_tot[x][y][z] for x in range(len(sys.argv)-4)] for y in range(len(data_avg))] for z in range(len(data_avg[0]))]
   for p in range(len(data_avg[0])):
     for c in range(len(data_avg)):
       fout.write("%f %f " %(float(data_avg[c][p])/(float(len(sys.argv)-4)), np.std(data_std[p][c])))

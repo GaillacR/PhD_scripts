@@ -128,11 +128,12 @@ def readFromColfile(filename,header=0,first=0,lim=100,d=None):
       next(fin)
     for line in fin:
       sp = line.split(d)
-      if (cl==0):
-        v = [[] for x in range(first,min(len(sp),lim))]
-      for p in range(len(v)):
-        v[p].append(float(sp[p+first]))
-      cl = cl + 1
+      if (len(sp)>0):
+        if (cl==0):
+          v = [[] for x in range(first,min(len(sp),lim))]
+        for p in range(len(v)):
+          v[p].append(float(sp[p+first]))
+        cl = cl + 1
   return v
 
 
