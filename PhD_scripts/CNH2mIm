@@ -72,7 +72,7 @@ while (k < L):
   for i in range(len(cycle)):
     r0 = pbc.ClosestImage(pbc.get_coord(cycle[0]),pbc.get_coord(cycle[i]),Cell)
     cycle[i] = pbc.make_point(r0[0],r0[1],r0[2],cycle[i].elt)
-  posX = pbc.Barycenter(cycle)
+  posX = pbc.Barycenter(cycle,Cell)
   X = pbc.make_point(posX[0],posX[1],posX[2],"X")
   for j in range(len(CycAtoms2)):
     for p in range(len(cycle)):
@@ -116,7 +116,7 @@ for time in range(Numbsteps):
     for i in range(len(cycle)):
       r0 = pbc.ClosestImage(pbc.get_coord(cycle[0]),pbc.get_coord(cycle[i]),Cell)
       cycle[i] = pbc.make_point(r0[0],r0[1],r0[2],cycle[i].elt)
-    posX = pbc.Barycenter(cycle)
+    posX = pbc.Barycenter(cycle,Cell)
     X = pbc.make_point(posX[0],posX[1],posX[2],"X")
     traj.append(X)
     L = L-len(cycles[0])

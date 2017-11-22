@@ -42,7 +42,7 @@ for t in range(nconf):
 
 with open(sys.argv[1]+".ZnImang","w") as out:
   for t in range(nconf):
-    out.write(str(t*5)+" "+str(angle[t])+"\n")
+    out.write(str(t)+" "+str(angle[t])+"\n")
 
 
 print "############################################################\n\n"
