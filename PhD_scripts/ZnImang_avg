@@ -12,7 +12,7 @@ cell_f = sys.argv[2]
 [Cell, Cell.C] = rw.readCell(cell_f)
 
 # Read the the positions in
-trajPos = rw.readFromXYZFile(sys.argv[1] + ".xyz",1,1)
+trajPos = rw.readFromXYZFile(sys.argv[1] + ".xyz",int(sys.argv[3]),int(sys.argv[4]))
 
 nconf = len(trajPos)
 Natoms = len(trajPos[0])
@@ -40,7 +40,7 @@ for t in range(nconf):
     angles.append(pbc.Angle(Zn1,Ims[j],Zn2,Cell))
   angle[t] = sum(angles)/float(len(angles))
 
-with open(sys.argv[1]+".ZnImang","w") as out:
+with open(sys.argv[1].split("/")[-1]+".ZnImZn","w") as out:
   for t in range(nconf):
     out.write(str(t)+" "+str(angle[t])+"\n")
 
