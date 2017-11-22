@@ -21,26 +21,26 @@ angle = [0.0 for x in range(nconf)]
 
 for t in range(nconf):
   angles = list()
-  Zns = list()
   Ns = list()
+  Zns = list()
   for i in range(Natoms):
-    if (trajPos[t][i].elt=="Zn"):
-      Zns.append(trajPos[t][i])
-    elif (trajPos[t][i].elt=="N"):
+    if (trajPos[t][i].elt=="N"):
       Ns.append(trajPos[t][i])
-  for j in range(len(Ns)):
-    Zns2 = Zns[:]
-    Zn1 = pbc.NeiAtoms(Ns[j],Zns2,Cell,n=1,dmax=10)[1]
-    Zns2 = Zns[:]
-    for k in range(len(Zns2)):
-      if (pbc.distance_cart(pbc.get_coord(Zn1),pbc.ClosestImage(pbc.get_coord(Zn1),pbc.get_coord(Zns2[k]),Cell),Cell)<0.1):
-        Zns2.remove(Zns2[k])
+    elif (trajPos[t][i].elt=="Zn"):
+      Zns.append(trajPos[t][i])
+  for j in range(len(Zns)):
+    Ns2 = Ns[:]
+    N1 = pbc.NeiAtoms(Zns[j],Ns2,Cell,n=1,dmax=10)[1]
+    Ns2 = Ns[:]
+    for k in range(len(Ns2)):
+      if (pbc.distance_cart(pbc.get_coord(N1),pbc.ClosestImage(pbc.get_coord(N1),pbc.get_coord(Ns2[k]),Cell),Cell)<0.1):
+        Ns2.remove(Ns2[k])
         break
-    Zn2 = pbc.NeiAtoms(Ns[j],Zns2,Cell,n=1,dmax=10)[1]
-    angles.append(pbc.Angle(Zn1,Ns[j],Zn2,Cell))
+    N2 = pbc.NeiAtoms(Zns[j],Ns2,Cell,n=1,dmax=10)[1]
+    angles.append(pbc.Angle(N1,Zns[j],N2,Cell))
   angle[t] = sum(angles)/float(len(angles))
 
-with open(sys.argv[1].split("/")[-1]+".ZnNZn","w") as out:
+with open(sys.argv[1].split("/")[-1]+".NZnN","w") as out:
   for t in range(nconf):
     out.write(str(t)+" "+str(angle[t])+"\n")
 
