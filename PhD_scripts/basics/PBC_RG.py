@@ -250,7 +250,7 @@ def NeiAtoms(A, atoms, cell, n=2, dmax=20):
         elif (k==2): print "No", k+1, "rd neighbour found within", dmax, "Angström"
         else: print "No", k+1, "th neighbour found within", dmax, "Angström"
         print get_coord(A)
-        exit(1)
+        raise ValueError("No neighbour found")
   if (make_point(0.0,0.0,0.0,'H') in Nei): Nei.remove(make_point(0.0,0.0,0.0,'H'))
   return Nei
 
