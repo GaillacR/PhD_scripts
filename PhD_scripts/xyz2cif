@@ -14,7 +14,7 @@ exec data in c2r.__dict__
 dt = 0.5
 if (len(sys.argv)>3): dt = float(sys.argv[3])
 
-step = int(1000*float(0.5/dt))
+step = int(100*float(0.5/dt))
 Traj = rw.readFromXYZFile(sys.argv[1],step=step)
 nconf = len(Traj)
 

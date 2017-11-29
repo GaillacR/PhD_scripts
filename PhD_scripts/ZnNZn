@@ -39,11 +39,11 @@ for t in range(nconf):
       if (pbc.distance_cart(pbc.get_coord(Zn1),pbc.ClosestImage(pbc.get_coord(Zn1),pbc.get_coord(Zns2[k]),Cell),Cell)<0.1):
         Zns2.remove(Zns2[k])
         break
-      try:
-        Zn2 = pbc.NeiAtoms(Ns[j],Zns2,Cell,n=1,dmax=5)[1]
-      except ValueError:
-        continue
-    angles.append(pbc.Angle(Zn1,Ns[j],Zn2,Cell))
+    try:
+      Zn2 = pbc.NeiAtoms(Ns[j],Zns2,Cell,n=1,dmax=5)[1]
+      angles.append(pbc.Angle(Zn1,Ns[j],Zn2,Cell))
+    except ValueError:
+      continue
   angle[t] = sum(angles)/float(len(angles))
 
 with open(sys.argv[1].split("/")[-1]+".ZnNZn","w") as out:

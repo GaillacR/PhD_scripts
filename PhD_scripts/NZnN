@@ -30,14 +30,20 @@ for t in range(nconf):
       Zns.append(trajPos[t][i])
   for j in range(len(Zns)):
     Ns2 = Ns[:]
-    N1 = pbc.NeiAtoms(Zns[j],Ns2,Cell,n=1,dmax=10)[1]
+    try:
+      N1 = pbc.NeiAtoms(Zns[j],Ns2,Cell,n=1,dmax=3)[1]
+    except ValueError:
+      continue
     Ns2 = Ns[:]
     for k in range(len(Ns2)):
       if (pbc.distance_cart(pbc.get_coord(N1),pbc.ClosestImage(pbc.get_coord(N1),pbc.get_coord(Ns2[k]),Cell),Cell)<0.1):
         Ns2.remove(Ns2[k])
         break
-    N2 = pbc.NeiAtoms(Zns[j],Ns2,Cell,n=1,dmax=10)[1]
-    angles.append(pbc.Angle(N1,Zns[j],N2,Cell))
+    try:
+      N2 = pbc.NeiAtoms(Zns[j],Ns2,Cell,n=1,dmax=3)[1]
+      angles.append(pbc.Angle(N1,Zns[j],N2,Cell))
+    except ValueError:
+      continue
   angle[t] = sum(angles)/float(len(angles))
 
 with open(sys.argv[1].split("/")[-1]+".NZnN","w") as out:

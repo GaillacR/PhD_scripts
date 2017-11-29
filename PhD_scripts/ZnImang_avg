@@ -41,9 +41,9 @@ for t in range(nconf):
         break
     try:
       Zn2 = pbc.NeiAtoms(Ims[j],Zns2,Cell,n=1,dmax=5)[1]
+      angles.append(pbc.Angle(Zn1,Ims[j],Zn2,Cell))
     except ValueError:
       continue
-    angles.append(pbc.Angle(Zn1,Ims[j],Zn2,Cell))
   angle[t] = sum(angles)/float(len(angles))
 
 with open(sys.argv[1].split("/")[-1]+".ZnImZn","w") as out:
