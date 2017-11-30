@@ -17,10 +17,13 @@ if (len(sys.argv)>5):
   fz = int(sys.argv[5])
 
 s = 1
-if (len(sys.argv)<5 and len(sys.argv)>3):
+s2 = 1
+if (len(sys.argv)==5):
   s = int(sys.argv[3])
+  s2 = int(sys.argv[4])
 elif (len(sys.argv)>6):
   s = int(sys.argv[6])
+  s2 = int(sys.argv[7])
 
 traj = Trajectory(xyz)
 [Ax, Ay, Az, Bx, By, Bz, Cx, Cy, Cz] = rw.readFromColfile(cell_f,header=1,first=0)[2:11]
@@ -34,15 +37,16 @@ C = np.transpose(C2)
 i=0
 with Trajectory(xyz.split(".xyz")[0]+".pdb", "w") as output:
   for frame in traj:
-    a = np.linalg.norm(A[i])
-    b = np.linalg.norm(B[i])
-    c = np.linalg.norm(C[i])
-    gamma = np.arccos(np.dot(A[i],B[i])/(a*b))*180.0/np.pi
-    beta = np.arccos(np.dot(A[i],C[i])/(a*c))*180.0/np.pi
-    alpha = np.arccos(np.dot(B[i],C[i])/(b*c))*180.0/np.pi
-    Cell = UnitCell(fx*a,fy*b,fz*c,alpha,beta,gamma)
-    frame.set_cell(Cell)
-    output.write(frame)
-    i = i + s
+    if (i%s==0):
+      a = np.linalg.norm(A[i*s2])
+      b = np.linalg.norm(B[i*s2])
+      c = np.linalg.norm(C[i*s2])
+      gamma = np.arccos(np.dot(A[i*s2],B[i*s2])/(a*b))*180.0/np.pi
+      beta = np.arccos(np.dot(A[i*s2],C[i*s2])/(a*c))*180.0/np.pi
+      alpha = np.arccos(np.dot(B[i*s2],C[i*s2])/(b*c))*180.0/np.pi
+      Cell = UnitCell(fx*a,fy*b,fz*c,alpha,beta,gamma)
+      frame.set_cell(Cell)
+      output.write(frame)
+    i = i + 1
 
 traj.close()
