@@ -132,7 +132,10 @@ def readFromColfile(filename,header=0,first=0,lim=100,d=None):
         if (cl==0):
           v = [[] for x in range(first,min(len(sp),lim))]
         for p in range(len(v)):
-          v[p].append(float(sp[p+first]))
+          try:
+            v[p].append(float(sp[p+first]))
+          except ValueError:
+            v[p].append(0.0)
         cl = cl + 1
   return v
 
