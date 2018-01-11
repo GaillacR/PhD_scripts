@@ -6,13 +6,12 @@ import numpy as np
 import ReadWrite as rw
 
 
-def Cn_func(x,c,x1,x2):
+def Cn_func(x,c,x1,x2,alpha=1):
   def f(x,c,a):
     return (1-np.tanh(a*(x-c)))/2
-  alpha = 1
   while (f(x1,c,alpha)<0.999 and f(x2,c,alpha)>0.001):
     alpha=alpha*2
-  return f(x,c,alpha)
+  return [f(x,c,alpha),alpha]
 
 def fill_hist(hist,bin_size,dist,cmin=0):
   for i in range(len(dist)):
@@ -65,14 +64,16 @@ DcZn = [[0 for i in range(nbins)] for j in range(nconf)]
 tmp_N = [0 for i in range(len(Nitro))]
 tmp_Zn = [0 for i in range(len(Zinc))]
 
+alpha = 1
 for time in range(nconf):
   tmp_N = [0 for i in range(len(Nitro))]
   tmp_Zn = [0 for i in range(len(Zinc))]
   for p in range(npairs):
     d = float(trajDist[p][time])
     if (d < x2):
-      tmp_N[Nitro[pairs[p][0]]] = tmp_N[Nitro[pairs[p][0]]] + Cn_func(d,cutoff,x1,x2)
-      tmp_Zn[Zinc[pairs[p][1]]] = tmp_Zn[Zinc[pairs[p][1]]] + Cn_func(d,cutoff,x1,x2)
+      tmp_N[Nitro[pairs[p][0]]] = tmp_N[Nitro[pairs[p][0]]] + Cn_func(d,cutoff,x1,x2,alpha)[0]
+      alpha = Cn_func(d,cutoff,x1,x2,alpha)[1]
+      tmp_Zn[Zinc[pairs[p][1]]] = tmp_Zn[Zinc[pairs[p][1]]] + Cn_func(d,cutoff,x1,x2,alpha)[0]
   fill_hist(DcZn[time],bin_size,tmp_Zn)
   NcN[time] = float(sum(tmp_N))/float(len(tmp_N))
   NcZn[time] = float(sum(tmp_Zn))/float(len(tmp_Zn))
