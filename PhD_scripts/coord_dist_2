@@ -1,0 +1,109 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import math, sys
+import numpy as np
+import ReadWrite as rw
+
+
+def Cn_func(x,c,x1,x2,alpha=1):
+  def f(x,c,a):
+    return (1-np.tanh(a*(x-c)))/2
+  while (f(x1,c,alpha)<0.999 and f(x2,c,alpha)>0.001):
+    alpha=alpha*2
+  return [f(x,c,alpha),alpha]
+
+def fill_hist(hist,bin_size,dist,cmin=0):
+  for i in range(len(dist)):
+    ind = int(math.ceil(dist[i]/bin_size))
+    if (ind < len(hist)):
+      hist[ind] = hist[ind]+1
+
+cutoff = float(sys.argv[3])
+x1 = float(sys.argv[4])
+x2 = float(sys.argv[5])
+nconf = rw.nconfFromDist(sys.argv[1]+".dist")
+print "#### Simulation", sys.argv[1].split("/")[-1], "####"
+print "Reading ", nconf, "configurations"
+
+# Read the distances in
+trajDist = rw.readFromDistanceFile(sys.argv[1] + ".dist", nconf)
+
+# Read the correspondance between pairs and atoms in Pairs.dat
+pairs = {} # dict with [Atom1(N), Atom2(Zn)] at key pair 1-2
+with open(sys.argv[2],"r") as pfile:
+  next(pfile)
+  for line in pfile:
+    sp = line.split()
+    pairs[int(sp[2])-1] = [int(sp[0]),int(sp[1])]
+
+npairs = len(trajDist)
+
+Nitro = {}
+Zinc = {}
+
+c1 = 0
+c2 = 0
+for i in range(len(pairs)):
+  if (pairs[i][0] not in Nitro):
+    Nitro[pairs[i][0]] = c1
+    c1 = c1 + 1
+  if (pairs[i][1] not in Zinc):
+    Zinc[pairs[i][1]] = c2
+    c2 = c2 + 1
+
+NcN = [0 for i in range(nconf)]
+NcZn = [0 for i in range(nconf)]
+
+bin_size = 1
+cmax = 6
+nbins = int(cmax/bin_size)
+DcN = [[0 for i in range(nbins)] for j in range(nconf)]
+DcZn = [[0 for i in range(nbins)] for j in range(nconf)]
+
+tmp_N = [0 for i in range(len(Nitro))]
+tmp_Zn = [0 for i in range(len(Zinc))]
+
+alpha = 1
+for time in range(nconf):
+  tmp_N = [0 for i in range(len(Nitro))]
+  tmp_Zn = [0 for i in range(len(Zinc))]
+  for p in range(npairs):
+    d = float(trajDist[p][time])
+    if (d < x2):
+      tmp_N[Nitro[pairs[p][0]]] = tmp_N[Nitro[pairs[p][0]]] + Cn_func(d,cutoff,x1,x2,alpha)[0]
+      alpha = Cn_func(d,cutoff,x1,x2,alpha)[1]
+      tmp_Zn[Zinc[pairs[p][1]]] = tmp_Zn[Zinc[pairs[p][1]]] + Cn_func(d,cutoff,x1,x2,alpha)[0]
+  fill_hist(DcZn[time],bin_size,tmp_Zn)
+  NcN[time] = float(sum(tmp_N))/float(len(tmp_N))
+  NcZn[time] = float(sum(tmp_Zn))/float(len(tmp_Zn))
+
+print "Simulated time:", 5*nconf, "fs"
+print "Nitrogen coordination number (with Zn):", float(sum(NcN))/float(len(NcN))
+print "Zinc coordination number (with N):",float(sum(NcZn))/float(len(NcZn))
+print "Parameters used for coordination number calculation:"
+print "C(d(Zn-N)) is 1 for x <", x1
+print "C(d(Zn-N)) is 0 for x >", x2
+print "C(d(Zn-N)) is 0.5 for x =", cutoff
+print float(sum(NcZn))/float(len(NcZn))
+
+suffix=""
+if (sys.argv[-1]=="nofile"):
+  print "No file output generated as asked"
+  exit(0)
+elif ("suffix=" in sys.argv[-1]):
+  suffix = sys.argv[-1].split("=")[-1]
+
+with open(sys.argv[1]+".coord"+suffix,"w") as fout:
+  for i in range(nbins):
+    for time in range(nconf):
+      fout.write("%d %f\n" % (time, DcZn[time][i]))
+    fout.write("\n\n")
+
+Dc = [0.0 for i in range(nbins)]
+with open(sys.argv[1]+".hcoord"+suffix,"w") as fout:
+  for i in range(nbins):
+    for time in range(nconf):
+      Dc[i] = Dc[i] + DcZn[time][i]
+    fout.write("%f %f\n" % (i*bin_size, Dc[i]*100/(float(nconf*len(Zinc)))))
+print "############################################################\n\n"
