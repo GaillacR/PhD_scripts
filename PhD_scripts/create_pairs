@@ -1,0 +1,29 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import sys
+import ReadWrite as rw
+
+# Read the trajectory in
+trajPos = rw.readFromXYZFile(sys.argv[1] + ".xyz",1,0,last=1)
+
+nat = len(trajPos[0])
+nconf = len(trajPos)
+
+Pairs = list()
+k = 0
+for i in range(nat):
+  Atom1 = trajPos[0][i]
+  Label1 = Atom1.elt
+  for j in range(nat):
+    Atom2 = trajPos[0][j]
+    Label2 = Atom2.elt
+    if (Label1 == "N" and Label2 == "Zn"):
+      k = k + 1
+      Pairs.append([i,j])
+
+with open("Pairs.dat","w") as pfile:
+  pfile.write("# Atom1(N) Atom2(Zn) Pair number\n")
+  for k in range(len(Pairs)):
+    pfile.write(str(Pairs[k][0])+"\t"+str(Pairs[k][1])+"\t"+str(k+1)+"\n")
+
