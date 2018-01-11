@@ -1,0 +1,125 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import math, sys
+import numpy as np
+import PBC_RG as pbc
+import ReadWrite as rw
+
+# Find out the name of the file from the path
+name = (sys.argv[1].split("/")[-1]).split(".")[0]
+dest = sys.argv[3]
+name = dest+name
+
+# Options from input list
+is_tenth = 0
+if (len(sys.argv)>4):
+  is_tenth = int(sys.argv[4])
+
+first_step = int(sys.argv[5])
+
+fst = ["N","O"]
+scd = "Zn"
+if (len(sys.argv)>7):
+  fst = [sys.argv[6].split(",")[0],sys.argv[6].split(",")[1]]
+  scd = sys.argv[7]
+
+dt = 0.5
+for i in range(len(sys.argv)):
+  if ("dt=" in sys.argv[i]):
+    dt = float(sys.argv[i].split("=")[-1])
+
+# Read the cell parameters in
+split = str.split
+cell_f = sys.argv[2]
+[Cell, Cell.C] = rw.readCell(cell_f)
+
+# Read the trajectory in
+# and keep only every 5 ps (a tenth of it (dt=0.5fs)) without the first picoseconds
+if (is_tenth==0):
+  trajPos = rw.readFromXYZFile(sys.argv[1] + ".xyz",int(10*float(0.5/dt)),first_step)
+elif (is_tenth==1):
+  trajPos = rw.readFromXYZFile(sys.argv[1] + ".xyz",1,first_step)
+
+if len(trajPos)==0: trajPos = rw.readFromXYZFile(sys.argv[1]+".xyz",1,1)
+
+nat = len(trajPos[0])
+nconf = len(trajPos)
+
+Pairs = list()
+k = 0
+for i in range(nat):
+  Atom1 = trajPos[0][i]
+  Label1 = Atom1.elt
+  for j in range(nat):
+    Atom2 = trajPos[0][j]
+    Label2 = Atom2.elt
+    if (Label1 in fst and Label2 == scd):
+      k = k + 1
+      Pairs.append([i,j])
+
+Distances = [[0.0 for i in range(len(Pairs))] for j in range(nconf)]
+Isexch = 0
+foo = 0
+
+for k in range(nconf):
+  for i in range(len(Pairs)):
+    pos1 = pbc.get_coord(trajPos[k][Pairs[i][0]])
+    pos2 = pbc.get_coord(trajPos[k][Pairs[i][1]])
+    d12 = pbc.distance_cart(pos1,pos2,Cell)
+    Distances[k][i] = d12
+    if (d12 > max([Cell.a,Cell.b,Cell.c])):
+      print "Too long distance"
+      print d12
+      print pos1
+      print pos2
+      exit(1)
+    #if (k>1):
+    #  if (abs(Distances[k][i]-Distances[k-1][i])>2):
+    #    print i, k
+    #    print Distances[k][i]
+    #    print Distances[k-1][i]
+    #    print abs(Distances[k][i]-Distances[k-1][i])
+    #    print pos1
+    #    pbc.print_point(trajPos[k-1][Pairs[i][0]])
+    #    print pos2
+    #    pbc.print_point(trajPos[k-1][Pairs[i][1]])
+    #    exit(1)
+
+if (is_tenth==0): rw.writeTrajAsXYZFile(name+"_10.xyz", trajPos)
+# Uncomment until line 99 to have a xyz where the atoms undergoing exchanges
+# are represented by Cu (for Zn) and U (for N)
+#pairs = []
+#for i in range(len(Pairs)):
+#  foo = 0
+#  for k in range(nconf):
+#   d = Distances[k][i]
+#   if (d < 2.0): foo = 1
+#   if (d > 4.0 and foo == 1 and i not in pairs):
+#     Isexch = Isexch+1
+#     pairs.append(i)
+#     foo = 0
+#     for l in range(nconf):
+#       trajPos[l][Pairs[i][0]].elt = "U"
+#       trajPos[l][Pairs[i][1]].elt = "Cu"
+#  foo = 0
+#  for k in range(nconf):
+#   d = Distances[k][i]
+#   if (d > 4.0): foo = 1
+#   if (d < 2.0 and foo == 1 and i not in pairs):
+#     Isexch = Isexch+1
+#     foo = 0
+#     for l in range(nconf):
+#       trajPos[l][Pairs[i][0]].elt = "U"
+#       trajPos[l][Pairs[i][1]].elt = "Cu"
+#
+#print "Number of exchanges between 2 and 4 Angströms for ", name, ":", Isexch
+#
+#rw.writeTrajAsXYZFile(name+"_modif.xyz", trajPos)
+
+Outname = name+fst[0]+"-"+fst[1]+scd+".dist"
+with open(Outname,"w") as fout:
+  for i in range(len(Pairs)):
+    for k in range(nconf):
+      fout.write(str(k)+' '+str(Distances[k][i])+'\n')
+    fout.write('\n\n')

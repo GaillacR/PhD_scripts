@@ -55,7 +55,7 @@ for i in range(len(pairs)):
 NcN = [0 for i in range(nconf)]
 NcZn = [0 for i in range(nconf)]
 
-bin_size = 0.01
+bin_size = 1
 cmax = 6
 nbins = int(cmax/bin_size)
 DcN = [[0 for i in range(nbins)] for j in range(nconf)]
