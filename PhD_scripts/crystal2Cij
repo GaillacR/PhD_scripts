@@ -16,6 +16,27 @@ if len(sys.argv)<2 :
   print "Usage: " + sys.argv[0] + " crystal output files basename (like file1 file2, not file1.out file2.out) and optionally crystal class (hexa/cubic) "
   exit(1)
 
+try:
+  f = open("restart/"+sys.argv[1]+".out","r")
+  sys.argv.append("restart/"+sys.argv[1])
+  try:
+    f = open("restart/"+sys.argv[2]+".out","r")
+    sys.argv.append("restart/"+sys.argv[2])
+    try:
+      f = open("restart/"+sys.argv[3]+".out","r")
+      sys.argv.append("restart/"+sys.argv[3])
+      try:
+        f = open("restart/"+sys.argv[4]+".out","r")
+        sys.argv.append("restart/"+sys.argv[4])
+      except IOError as e:
+        pass
+    except IOError as e:
+      pass
+  except IOError as e:
+    pass
+except IOError as e:
+  pass
+
 if (sys.argv[-1]=='cubic' or sys.argv[-1]=="hexa"):
   Cclass = sys.argv[-1]
 else:

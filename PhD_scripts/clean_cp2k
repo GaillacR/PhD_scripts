@@ -74,7 +74,7 @@ try:
 except IOError as e:
   fin = gzip.open(sys.argv[1]+".gz",'rt')
 
-with open((sys.argv[1].split("(?<!.),(?!.)"))[0]+"_clean."+sys.argv[1].split(".")[1],"w") as fout:
+with open((sys.argv[1].split("."))[0]+"_clean."+sys.argv[1].split(".")[1],"w") as fout:
   if (sys.argv[1].split(".")[1] in extlist1):
     for line in fin:
       sp = line.split()
