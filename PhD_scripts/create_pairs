@@ -18,12 +18,12 @@ for i in range(nat):
   for j in range(nat):
     Atom2 = trajPos[0][j]
     Label2 = Atom2.elt
-    if (Label1 == "N" and Label2 == "Zn"):
+    if (Label1 == "O" and Label2 == "Zn"):
       k = k + 1
       Pairs.append([i,j])
 
 with open("Pairs.dat","w") as pfile:
-  pfile.write("# Atom1(N) Atom2(Zn) Pair number\n")
+  pfile.write("# Atom1(O) Atom2(Zn) Pair number\n")
   for k in range(len(Pairs)):
     pfile.write(str(Pairs[k][0])+"\t"+str(Pairs[k][1])+"\t"+str(k+1)+"\n")
 
