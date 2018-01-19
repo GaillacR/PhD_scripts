@@ -19,6 +19,13 @@ def fill_hist(hist,bin_size,dist,cmin=0):
     if (ind < len(hist)):
       hist[ind] = hist[ind]+1
 
+def fill_hist2D(hist,bin_size,dist1,dist2,cmin=0):
+  for i in range(len(dist1)):
+    ind1 = int(math.ceil(dist1[i]/bin_size))
+    ind2 = int(math.ceil(dist2[i]/bin_size))
+    if (ind1 < len(hist) and ind2 < len(hist[0])):
+      hist[ind1][ind2] = hist[ind1][ind2]+1
+
 cutoff = float(sys.argv[3])
 x1 = float(sys.argv[4])
 x2 = float(sys.argv[5])
@@ -35,46 +42,57 @@ with open(sys.argv[2],"r") as pfile:
   next(pfile)
   for line in pfile:
     sp = line.split()
-    pairs[int(sp[2])-1] = [int(sp[0]),int(sp[1])]
+    pairs[int(sp[2])-1] = [int(sp[0]),int(sp[1]),sp[3]]
 
 npairs = len(trajDist)
 
 Nitro = {}
 Zinc = {}
+Zinc2 = {}
 
 c1 = 0
 c2 = 0
+c3 = 0
 for i in range(len(pairs)):
   if (pairs[i][0] not in Nitro):
     Nitro[pairs[i][0]] = c1
     c1 = c1 + 1
-  if (pairs[i][1] not in Zinc):
+  if (pairs[i][1] not in Zinc and pairs[i][2]=="N"):
     Zinc[pairs[i][1]] = c2
     c2 = c2 + 1
+  if (pairs[i][1] not in Zinc2 and pairs[i][2]=="O"):
+    Zinc2[pairs[i][1]] = c3
+    c3 = c3 + 1
 
 NcN = [0 for i in range(nconf)]
 NcZn = [0 for i in range(nconf)]
+NcZn2 = [0 for i in range(nconf)]
 
 bin_size = 1
 cmax = 6
 nbins = int(cmax/bin_size)
 DcN = [[0 for i in range(nbins)] for j in range(nconf)]
-DcZn = [[0 for i in range(nbins)] for j in range(nconf)]
+DcZn = [[[0 for i in range(nbins)] for k in range(nbins)] for j in range(nconf)]
 
 tmp_N = [0 for i in range(len(Nitro))]
 tmp_Zn = [0 for i in range(len(Zinc))]
+tmp_Zn2 = [0 for i in range(len(Zinc2))]
 
 alpha = 1
 for time in range(nconf):
   tmp_N = [0 for i in range(len(Nitro))]
   tmp_Zn = [0 for i in range(len(Zinc))]
+  tmp_Zn2 = [0 for i in range(len(Zinc2))]
   for p in range(npairs):
     d = float(trajDist[p][time])
     if (d < x2):
       tmp_N[Nitro[pairs[p][0]]] = tmp_N[Nitro[pairs[p][0]]] + Cn_func(d,cutoff,x1,x2,alpha)[0]
       alpha = Cn_func(d,cutoff,x1,x2,alpha)[1]
-      tmp_Zn[Zinc[pairs[p][1]]] = tmp_Zn[Zinc[pairs[p][1]]] + Cn_func(d,cutoff,x1,x2,alpha)[0]
-  fill_hist(DcZn[time],bin_size,tmp_Zn)
+      if (pairs[p][2] == "N"):
+        tmp_Zn[Zinc[pairs[p][1]]] = tmp_Zn[Zinc[pairs[p][1]]] + Cn_func(d,cutoff,x1,x2,alpha)[0]
+      elif (pairs[p][2] == "O"):
+        tmp_Zn2[Zinc[pairs[p][1]]] = tmp_Zn2[Zinc[pairs[p][1]]] + Cn_func(d,cutoff,x1,x2,alpha)[0]
+  fill_hist2D(DcZn[time],bin_size,tmp_Zn,tmp_Zn2)
   NcN[time] = float(sum(tmp_N))/float(len(tmp_N))
   NcZn[time] = float(sum(tmp_Zn))/float(len(tmp_Zn))
 
@@ -95,15 +113,19 @@ elif ("suffix=" in sys.argv[-1]):
   suffix = sys.argv[-1].split("=")[-1]
 
 with open(sys.argv[1]+".coord"+suffix,"w") as fout:
+  fout.write("#time numb(N) numb(O) n(Zn)\n")
   for i in range(nbins):
-    for time in range(nconf):
-      fout.write("%d %f\n" % (time, DcZn[time][i]))
+    for j in range(nbins):
+      for time in range(nconf):
+        fout.write("%d %f %f %f\n" % (time, i*bin_size, j*bin_size, DcZn[time][i][j]))
     fout.write("\n\n")
 
-Dc = [0.0 for i in range(nbins)]
+Dc = [[0.0 for i in range(nbins)] for j in range(nbins)]
 with open(sys.argv[1]+".hcoord"+suffix,"w") as fout:
   for i in range(nbins):
-    for time in range(nconf):
-      Dc[i] = Dc[i] + DcZn[time][i]
-    fout.write("%f %f\n" % (i*bin_size, Dc[i]*100/(float(nconf*len(Zinc)))))
+    for j in range(nbins):
+      for time in range(nconf):
+        Dc[i][j] = Dc[i][j] + DcZn[time][i][j]
+      fout.write("%f %f %f\n" % (i*bin_size, j*bin_size, Dc[i][j]*100/(float(nconf*len(Zinc)))))
+    fout.write("\n\n")
 print "############################################################\n\n"
