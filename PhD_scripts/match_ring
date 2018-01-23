@@ -1,0 +1,18 @@
+#!/usr/bin/env python
+
+from sys import argv
+import PBC_RG as pbc
+import ReadWrite as rw
+import numpy as np
+
+
+ind = rw.readFromColfile(argv[1])
+xyz = rw.readFromXYZFile(argv[2])[0]
+indices = np.transpose(np.array(ind))
+
+for i in range(len(indices)):
+  ring = []
+  for j in range(len(indices[i])):
+    ring.append(xyz[int(indices[i][j])-1])
+  traj = [ring]
+  rw.writeTrajAsXYZFile(argv[2].split(".")[0]+"_"+(argv[1].split(".")[0]).split("/")[-1]+"_"+str(i+1)+".xyz",traj)
