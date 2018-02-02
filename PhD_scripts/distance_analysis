@@ -86,7 +86,7 @@ for k in range(nconf):
     #    pbc.print_point(trajPos[k-1][Pairs[i][1]])
     #    exit(1)
 
-if (is_tenth==0): rw.writeTrajAsXYZFile(name+"_10.xyz", trajPos)
+#if (is_tenth==0): rw.writeTrajAsXYZFile(name+"_10.xyz", trajPos)
 # Uncomment until line 99 to have a xyz where the atoms undergoing exchanges
 # are represented by Cu (for Zn) and U (for N)
 #pairs = []
