@@ -239,7 +239,7 @@ with open((sys.argv[1].split("."))[0]+"_clean."+sys.argv[1].split(".")[1],"w") a
       fout.write("\t".join(traj2))
       fout.write("\n")
 
-  elif (sys.argv[1].split(".")[1]=="ener"):
+  elif (sys.argv[1].split(".")[1] in ["ener","stress","cell"]):
     for line in fin:
       if (cl==0): fout.write(line)
       if (cl!=0):
