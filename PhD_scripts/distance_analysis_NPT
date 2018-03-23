@@ -29,10 +29,26 @@ for i in range(len(sys.argv)):
   if ("dt=" in sys.argv[i]):
     dt = float(sys.argv[i].split("=")[-1])
 
+s=10
+if (is_tenth==0):
+  s=10
+elif (is_tenth==1):
+  s=1
+
 # Read the cell parameters in
 split = str.split
 cell_f = sys.argv[2]
-[Cell, Cell.C] = rw.readCell(cell_f)
+[Ax, Ay, Az, Bx, By, Bz, Cx, Cy, Cz] = rw.readFromColfile(cell_f,header=1,first=0)[2:11]
+A2 = np.array([Ax,Ay,Az])
+A = np.transpose(A2)
+A = A[first_step-1::s]
+B2 = np.array([Bx,By,Bz])
+B = np.transpose(B2)
+B = B[first_step-1::s]
+C2 = np.array([Cx,Cy,Cz])
+C = np.transpose(C2)
+C = C[first_step-1::s]
+################################################
 
 # Read the trajectory in
 # and keep only every 5 ps (a tenth of it (dt=0.5fs)) without the first picoseconds
@@ -57,12 +73,22 @@ for i in range(nat):
     if (Label1 == fst and Label2 == scd):
       k = k + 1
       Pairs.append([i,j])
+print fst, scd
 
 Distances = [[0.0 for i in range(len(Pairs))] for j in range(nconf)]
 Isexch = 0
 foo = 0
 
+
 for k in range(nconf):
+  a = np.linalg.norm(A[k])
+  b = np.linalg.norm(B[k])
+  c = np.linalg.norm(C[k])
+  gamma = np.arccos(np.dot(A[k],B[k])/(a*b))
+  beta = np.arccos(np.dot(A[k],C[k])/(a*c))
+  alpha = np.arccos(np.dot(B[k],C[k])/(b*c))
+  Cell = pbc.make_cell(a, b, c, alpha, beta, gamma)
+  Cell.C = pbc.make_cell_C(Cell)
   for i in range(len(Pairs)):
     pos1 = pbc.get_coord(trajPos[k][Pairs[i][0]])
     pos2 = pbc.get_coord(trajPos[k][Pairs[i][1]])

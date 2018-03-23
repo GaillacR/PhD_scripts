@@ -219,13 +219,6 @@ def ClosestImage(r1,r2,cell):
   red2cart(r2,v2,cell)
   dr = [r2[i]-r1[i] for i in range(3)]
 
-  if (abs(np.sqrt(np.dot(dr,dr))) > min([cell.a,cell.b,cell.c])):
-    print np.sqrt(np.dot(dr,dr))
-    print min(d_cart)
-    print sol
-    print cell.alpha, cell.beta, cell.gamma
-    exit(1)
-
   return r2
 
 def NeiAtoms(A, atoms, cell, n=2, dmax=20):
