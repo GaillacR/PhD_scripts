@@ -31,4 +31,4 @@ a=[SiO[0][i]*SiO[1][i] for i in range(len(SiO[0]))]
 SiO_mean = np.sum(a)/(np.sum(SiO[1]))
 #print SiO_mean
 
-print name.split(".")[0], SiO_mean, SiOSi_mean, SiOSiO_mean
+print name.split(".")[0].split("/")[-1], SiO_mean, SiOSi_mean, SiOSiO_mean
