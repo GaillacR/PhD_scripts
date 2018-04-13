@@ -119,7 +119,7 @@ for pair in active:
         break
       elif (dist > cut1 and time == nconf-1): # Last step, still in unbound state
         t1 = (time-t0)*5
-        res1_times.append(t1) # Time in unbound state
+        #res1_times.append(t1) # Time in unbound state
     elif (evt==2):
       if (dist > cut2):
         foo = 1 # unbound state
@@ -176,7 +176,7 @@ for pair in active:
             break
       elif (dist > cut1 and t3 == nconf-1): # Last step, still in unbound state
         t1 = (t3-t0)*5
-        res1_times.append(t1) # Time in unbound state
+        #res1_times.append(t1) # Time in unbound state
 
 N2_form = N2_form + N_form
 N2_break = N2_break + N_break
