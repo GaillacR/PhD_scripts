@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
+import scipy.stats as sp
 import sys, os
 import ReadWrite as rw
 from pymatgen import Lattice, Structure, Molecule
@@ -15,20 +16,42 @@ mol.to(filename=name)
 
 os.system('cfiles angles '+name+' -s "dihedrals: name(#1) Si and name(#2) O and name(#3) Si and name(#4) O" --guess-bonds -o '+name.split(".")[0]+".dihe")
 SiOSiO = rw.readFromColfile(name.split(".")[0]+".dihe",header=2)
-a=[SiOSiO[0][i]*SiOSiO[1][i] for i in range(len(SiOSiO[0]))]
-SiOSiO_mean = np.sum(a)/(np.sum(SiOSiO[1]))
-#print SiOSi_mean
+pr=[SiOSiO[1][i]/sum(SiOSiO[1]) for i in range(len(SiOSiO[0]))]
+a= np.random.choice(SiOSiO[0],size=1000000,p=pr)
+SiOSiO_mean = np.mean(a)
+SiOSiO_median = np.median(a)
+SiOSiO_std = np.std(a)
+SiOSiO_skew = sp.skew(a)
+SiOSiO_maximum = max(a)
+SiOSiO_minimum = min(a)
+#print SiOSiO_mean, SiOSiO_median, SiOSiO_std
 
 os.system('cfiles angles '+name+' -s "angles: name(#1) Si and name(#2) O and name(#3) Si" --guess-bonds -o '+name.split(".")[0]+".angle")
 SiOSi = rw.readFromColfile(name.split(".")[0]+".angle",header=2)
-a=[SiOSi[0][i]*SiOSi[1][i] for i in range(len(SiOSi[0]))]
-SiOSi_mean = np.sum(a)/(np.sum(SiOSi[1]))
+pr=[SiOSi[1][i]/sum(SiOSi[1]) for i in range(len(SiOSi[0]))]
+a= np.random.choice(SiOSi[0],size=1000000,p=pr)
+SiOSi_mean = np.mean(a)
+SiOSi_median = np.median(a)
+SiOSi_std = np.std(a)
+SiOSi_gmean = sp.mstats.gmean(a)
+SiOSi_hmean = sp.hmean(a)
+SiOSi_skew = sp.skew(a)
+SiOSi_maximum = max(a)
+SiOSi_minimum = min(a)
 #print SiOSi_mean
 
 os.system('cfiles rdf '+name+' -s "pairs: name(#1) Si and name(#2) O" --max=3.0 -o '+name.split(".")[0]+".rdf")
 SiO = rw.readFromColfile(name.split(".")[0]+".rdf",header=3)
-a=[SiO[0][i]*SiO[1][i] for i in range(len(SiO[0]))]
-SiO_mean = np.sum(a)/(np.sum(SiO[1]))
+pr=[SiO[1][i]/sum(SiO[1]) for i in range(len(SiO[0]))]
+a= np.random.choice(SiO[0],size=1000000,p=pr)
+SiO_mean = np.mean(a)
+SiO_median = np.median(a)
+SiO_std = np.std(a)
+SiO_gmean = sp.mstats.gmean(a)
+SiO_hmean = sp.hmean(a)
+SiO_skew = sp.skew(a)
+SiO_maximum = max(a)
+SiO_minimum = min(a)
 #print SiO_mean
 
-print name.split(".")[0].split("/")[-1], SiO_mean, SiOSi_mean, SiOSiO_mean
+print name.split(".")[0].split("/")[-1], SiO_mean, SiOSi_mean, SiOSiO_mean, SiO_median, SiOSi_median, SiOSiO_median, SiO_std, SiOSi_std, SiOSiO_std, SiO_gmean, SiOSi_gmean,SiO_hmean, SiOSi_hmean, SiO_skew, SiOSi_skew, SiOSiO_skew,SiO_maximum, SiOSi_maximum, SiOSiO_maximum,SiO_minimum, SiOSi_minimum, SiOSiO_minimum
